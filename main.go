@@ -23,7 +23,7 @@ func main() {
 	scanner_receive.FoundFileHandler = imclient.NewProcessor(os.Getenv("IM_IN_DIR"), os.Getenv("IM_OUT_DIR"))
 	go scanner_receive.KeepScanning(ctx, "./res/raw/", 2*time.Second)
 
-	botClient, err := telegram.NewBotClient(os.Getenv("TELEGRAM_BOT_TOKEN"))
+	botClient, err := telegram.NewBotClient(ctx, os.Getenv("TELEGRAM_BOT_TOKEN"))
 	if err != nil {
 		log.Default().Println(err)
 	}
