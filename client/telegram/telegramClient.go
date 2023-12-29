@@ -21,7 +21,7 @@ type TelegramClient struct {
 	ctx context.Context
 }
 
-func NewClassroomTrackerBot(botToken string) (*TelegramClient, error) {
+func NewBotClient(ctx context.Context, botToken string) (*TelegramClient, error) {
 	if botToken == "" {
 		panic(errors.New("missing token"))
 	}
@@ -29,7 +29,7 @@ func NewClassroomTrackerBot(botToken string) (*TelegramClient, error) {
 	tgc := TelegramClient{
 		log: *log.Default(),
 	}
-	ctx := context.Background()
+
 	opts := []tg.Option{
 		// bot.WithDefaultHandler(ctb.DefaultHandler),
 	}
@@ -53,6 +53,8 @@ func (tc *TelegramClient) PhotoMessageMatch(update *models.Update) bool {
 }
 
 func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
+	defer mu.Unlock()
+
 	params := tg.GetFileParams{}
 	params.FileID = update.Message.Photo[3].FileID
 	file, err := bot.GetFile(ctx, &params)
@@ -66,6 +68,8 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 
 	dlLink := bot.FileDownloadLink(file)
 	filename := file.FileID + path.Ext(dlLink)
+
+	mu.Lock()
 	imgToChatMap[filename] = update.Message.Chat.ID
 
 	bot.SendMessage(ctx,
@@ -107,9 +111,11 @@ func downloadPhoto(url, name string) error {
 }
 
 func (tc *TelegramClient) StartHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
-	tc.log.Println(update.Message.From.ID)
-	tc.log.Println(update.Message.From.Username)
-	tc.log.Println(update.Message.From.LanguageCode)
+	bot.SendMessage(ctx, &tg.SendMessageParams{
+		ChatID: update.Message.Chat.ID,
+		Text: `Отправьте изображение для обработки.
+		В силу текущих ограничений, пожалуйста, отправляйте по одному изображению за раз.`,
+	})
 }
 
 func (tc *TelegramClient) Start() {

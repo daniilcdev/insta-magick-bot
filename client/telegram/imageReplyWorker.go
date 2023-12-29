@@ -3,15 +3,20 @@ package telegram
 import (
 	"io/fs"
 	"os"
+	"sync"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
+var mu sync.Mutex = sync.Mutex{}
 var imgToChatMap map[string]any = make(map[string]any)
 
 func (tc *TelegramClient) ProcessNewFile(dir string, entry fs.DirEntry) {
+	defer mu.Unlock()
 	fileName := entry.Name()
+
+	mu.Lock()
 	chatId, ok := imgToChatMap[fileName]
 
 	if !ok {

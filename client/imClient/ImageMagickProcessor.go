@@ -15,7 +15,6 @@ type IMProcessor struct {
 }
 
 func NewProcessor(sourceDir, outDir string) *IMProcessor {
-
 	return &IMProcessor{
 		inDir:  sourceDir,
 		outDir: outDir,
