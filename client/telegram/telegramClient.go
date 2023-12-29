@@ -20,6 +20,10 @@ type TelegramClient struct {
 }
 
 func NewClassroomTrackerBot(botToken string) (*TelegramClient, error) {
+	if botToken == "" {
+		panic(errors.New("missing token"))
+	}
+
 	tgc := TelegramClient{
 		log: *log.Default(),
 	}
