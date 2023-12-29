@@ -22,14 +22,13 @@ func NewProcessor(sourceDir, outDir string) *IMProcessor {
 	}
 }
 
-func (im *IMProcessor) Naturalize(file fs.FileInfo) {
+func (im *IMProcessor) Naturalize(filename string) {
 	// convert ./res/raw/*.jpg -normalize -auto-gamma ./res/processed/*.jpg
-	fileName := file.Name()
 	cmd := exec.Command("convert",
-		im.inDir+fileName,
+		im.inDir+filename,
 		"-normalize",
 		"-auto-gamma",
-		im.outDir+fileName,
+		im.outDir+filename,
 	)
 
 	stdout, err := cmd.Output()
@@ -38,22 +37,23 @@ func (im *IMProcessor) Naturalize(file fs.FileInfo) {
 		return
 	}
 
-	// to debug
-	fmt.Println(string(stdout))
+	if len(stdout) > 0 {
+		// to debug
+		fmt.Println(string(stdout))
+	}
 }
 
 func (im *IMProcessor) ProcessNewFile(path string, entry fs.DirEntry) {
-	source := path + entry.Name()
-	pending := im.inDir + entry.Name()
+	filename := entry.Name()
+	source := path + filename
+	pending := im.inDir + filename
 
 	err := os.Rename(source, pending)
 	if err != nil {
-		fmt.Printf("failed to move file %s: %v\n", entry.Name(), err)
+		fmt.Printf("failed to move file %s: %v\n", filename, err)
 		return
 	}
 
-	fi, _ := entry.Info()
-	im.Naturalize(fi)
-
-	fmt.Println("new file processed")
+	im.Naturalize(filename)
+	os.Remove(pending)
 }

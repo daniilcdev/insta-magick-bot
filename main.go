@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"time"
 
 	imclient "github.com/daniilcdev/insta-magick-bot/client/imClient"
@@ -19,8 +19,9 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	folderscanner.FoundFileHandler = imclient.NewProcessor(os.Getenv("IM_IN_DIR"), os.Getenv("IM_OUT_DIR"))
-	go folderscanner.KeepScanning(ctx, "./res/raw", 2*time.Second)
+	scanner_receive := folderscanner.FileScanner{}
+	scanner_receive.FoundFileHandler = imclient.NewProcessor(os.Getenv("IM_IN_DIR"), os.Getenv("IM_OUT_DIR"))
+	go scanner_receive.KeepScanning(ctx, "./res/raw/", 2*time.Second)
 
 	botClient, err := telegram.NewClassroomTrackerBot(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	if err != nil {
@@ -29,6 +30,7 @@ func main() {
 
 	go botClient.Start()
 
-	fmt.Println("keeping system alive for 10 minutes")
-	<-time.After(10 * time.Second)
+	interupt := make(chan os.Signal, 1)
+	signal.Notify(interupt, os.Interrupt)
+	<-interupt
 }

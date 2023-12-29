@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"time"
 
+	folderscanner "github.com/daniilcdev/insta-magick-bot/workers/folderScanner"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
@@ -62,6 +64,10 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 		)
 	}
 
+	dlLink := bot.FileDownloadLink(file)
+	filename := file.FileID + path.Ext(dlLink)
+	imgToChatMap[filename] = update.Message.Chat.ID
+
 	bot.SendMessage(ctx,
 		&tg.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
@@ -69,7 +75,7 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 		},
 	)
 
-	go downloadPhoto(bot.FileDownloadLink(file), file.FileID)
+	go downloadPhoto(dlLink, filename)
 }
 
 func downloadPhoto(url, name string) error {
@@ -84,7 +90,7 @@ func downloadPhoto(url, name string) error {
 	}
 
 	//Create a empty file
-	file, err := os.Create("res/raw/" + name + path.Ext(url))
+	file, err := os.Create("./res/raw/" + name)
 	if err != nil {
 		return err
 	}
@@ -96,7 +102,7 @@ func downloadPhoto(url, name string) error {
 		return err
 	}
 
-	log.Printf("file saved - %s\n", name)
+	log.Printf("new raw file: %s\n", name)
 	return nil
 }
 
@@ -107,6 +113,10 @@ func (tc *TelegramClient) StartHandler(ctx context.Context, bot *tg.Bot, update 
 }
 
 func (tc *TelegramClient) Start() {
+	scanner_sendback := folderscanner.FileScanner{}
+	scanner_sendback.FoundFileHandler = tc
+	go scanner_sendback.KeepScanning(tc.ctx, os.Getenv("IM_OUT_DIR"), 3*time.Second)
+
 	tc.log.Println("[INFO] Bot started")
 	tc.bot.Start(tc.ctx)
 }

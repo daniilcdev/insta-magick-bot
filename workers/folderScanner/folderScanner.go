@@ -12,9 +12,11 @@ type FileHandler interface {
 	ProcessNewFile(dir string, entry fs.DirEntry)
 }
 
-var FoundFileHandler FileHandler
+type FileScanner struct {
+	FoundFileHandler FileHandler
+}
 
-func KeepScanning(ctx context.Context, path string, period time.Duration) {
+func (s *FileScanner) KeepScanning(ctx context.Context, path string, period time.Duration) {
 	ticker := time.NewTicker(period)
 	for {
 		select {
@@ -30,7 +32,7 @@ func KeepScanning(ctx context.Context, path string, period time.Duration) {
 			case len(nFiles) > 0:
 				const nWorkers = 4
 				cap := min(len(nFiles), nWorkers)
-				go processFiles(path, nFiles[:cap])
+				go s.processFiles(path, nFiles[:cap])
 			}
 
 			ticker.Reset(period)
@@ -38,13 +40,13 @@ func KeepScanning(ctx context.Context, path string, period time.Duration) {
 	}
 }
 
-func processFiles(path string, files []fs.DirEntry) {
-	if FoundFileHandler == nil {
+func (s *FileScanner) processFiles(path string, files []fs.DirEntry) {
+	if s.FoundFileHandler == nil {
 		fmt.Println("no func of process")
 		return
 	}
 
 	for _, entry := range files {
-		FoundFileHandler.ProcessNewFile(path, entry)
+		s.FoundFileHandler.ProcessNewFile(path, entry)
 	}
 }
