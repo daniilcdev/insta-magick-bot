@@ -65,7 +65,7 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 		},
 	)
 
-	downloadPhoto(bot.FileDownloadLink(file), file.FileID)
+	go downloadPhoto(bot.FileDownloadLink(file), file.FileID)
 }
 
 func downloadPhoto(url, name string) error {
