@@ -8,7 +8,11 @@ import (
 	"time"
 )
 
-var ProcessFunc func(fs.DirEntry)
+type FileHandler interface {
+	ProcessNewFile(dir string, entry fs.DirEntry)
+}
+
+var FoundFileHandler FileHandler
 
 func KeepScanning(ctx context.Context, path string, period time.Duration) {
 	ticker := time.NewTicker(period)
@@ -26,7 +30,7 @@ func KeepScanning(ctx context.Context, path string, period time.Duration) {
 			case len(nFiles) > 0:
 				const nWorkers = 4
 				cap := min(len(nFiles), nWorkers)
-				go processFiles(nFiles[:cap])
+				go processFiles(path, nFiles[:cap])
 			}
 
 			ticker.Reset(period)
@@ -34,13 +38,13 @@ func KeepScanning(ctx context.Context, path string, period time.Duration) {
 	}
 }
 
-func processFiles(files []fs.DirEntry) {
-	if ProcessFunc == nil {
+func processFiles(path string, files []fs.DirEntry) {
+	if FoundFileHandler == nil {
 		fmt.Println("no func of process")
 		return
 	}
 
-	for _, de := range files {
-		ProcessFunc(de)
+	for _, entry := range files {
+		FoundFileHandler.ProcessNewFile(path, entry)
 	}
 }
