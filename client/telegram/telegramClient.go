@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	folderscanner "github.com/daniilcdev/insta-magick-bot/workers/folderScanner"
@@ -49,14 +50,25 @@ func NewBotClient(ctx context.Context, botToken string) (*TelegramClient, error)
 }
 
 func (tc *TelegramClient) PhotoMessageMatch(update *models.Update) bool {
-	return len(update.Message.Photo) > 0
+	switch {
+	case update.Message.Document != nil && strings.HasPrefix(update.Message.Document.MimeType, "image"):
+		return true
+	case len(update.Message.Photo) > 0:
+		return true
+	default:
+		return false
+	}
 }
 
 func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
-	defer mu.Unlock()
-
 	params := tg.GetFileParams{}
-	params.FileID = update.Message.Photo[3].FileID
+	fileId, err := getFileId(update.Message)
+	if err != nil {
+		tc.log.Println("[WARN] unable to get fileId")
+		return
+	}
+
+	params.FileID = fileId
 	file, err := bot.GetFile(ctx, &params)
 	if err != nil {
 		bot.SendMessage(ctx, &tg.SendMessageParams{
@@ -69,6 +81,7 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 	dlLink := bot.FileDownloadLink(file)
 	filename := file.FileID + path.Ext(dlLink)
 
+	defer mu.Unlock()
 	mu.Lock()
 	imgToChatMap[filename] = update.Message.Chat.ID
 
