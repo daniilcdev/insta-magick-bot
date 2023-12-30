@@ -22,11 +22,13 @@ func NewProcessor(sourceDir, outDir string) *IMProcessor {
 }
 
 func (im *IMProcessor) Naturalize(filename string) {
-	// convert ./res/raw/*.jpg -normalize -auto-gamma ./res/processed/*.jpg
 	cmd := exec.Command("convert",
 		im.inDir+filename,
-		"-normalize",
-		"-auto-gamma",
+		"-separate",
+		"-contrast-stretch",
+		"0.5%x0.5%",
+		"-combine",
+		"-auto-level",
 		im.outDir+filename,
 	)
 
