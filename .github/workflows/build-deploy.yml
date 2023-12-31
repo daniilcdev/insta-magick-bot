@@ -33,7 +33,7 @@ jobs:
     - name: Deploy
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-        sudo systemctl stop imbot
+        systemctl --user stop imbot
         mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
-        sudo systemctl start imbot
+        systemctl --user start imbot
         
