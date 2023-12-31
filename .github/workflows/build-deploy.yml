@@ -9,7 +9,7 @@ on:
 
 env:
   GOOS: linux
-  GOARCH: arm
+  GOARCH: arm64
 
 jobs:
   build:
