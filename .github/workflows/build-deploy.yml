@@ -1,0 +1,39 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Build&Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  GOOS: linux
+  GOARCH: arm
+
+jobs:
+  build:
+    runs-on: self-hosted
+    strategy:
+      fail-fast: true    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Build
+      run: go build -o=imbot -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Deploy
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        systemctl stop imbot
+        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
+        systemctl start imbot
+        
