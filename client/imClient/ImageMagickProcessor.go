@@ -24,9 +24,9 @@ func NewProcessor(sourceDir, outDir string) *IMProcessor {
 func (im *IMProcessor) Naturalize(filename string) {
 	cmd := exec.Command("convert",
 		im.inDir+filename,
-		"-adaptive-sharpen",
-		"5%",
 		"-separate",
+		"-adaptive-sharpen",
+		"10%",
 		"-contrast-stretch",
 		"0.5%x0.5%",
 		"-combine",
