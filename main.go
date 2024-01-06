@@ -49,6 +49,10 @@ func main() {
 		WithStorage(db).
 		Start()
 
+	waitForExit()
+}
+
+func waitForExit() {
 	interupt := make(chan os.Signal, 1)
 	signal.Notify(interupt, os.Interrupt)
 	<-interupt
