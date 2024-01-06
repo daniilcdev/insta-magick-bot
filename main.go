@@ -38,8 +38,9 @@ func main() {
 
 	scanner_sendback := folderscanner.FolderScanner{}
 	scanner_sendback.FoundFilesHandler = &adapters.SendFileBackHandler{
-		Log:    &adapters.DefaultLoggerAdapter{},
-		Client: botClient,
+		Log:     &adapters.DefaultLoggerAdapter{},
+		Client:  botClient,
+		Storage: db,
 	}
 	go scanner_sendback.KeepScanning(ctx, os.Getenv("IM_OUT_DIR"), 30*time.Second)
 
