@@ -11,8 +11,6 @@ env:
   GOOS: linux
   GOARCH: arm64
   CGO_ENABLED: 1
-  CGO_CFLAGS: "-arch arm64"
-  CGO_LDFLAGS: "-arch arm64"
   CC: arm-linux-gnueabihf-gcc
   CXX: arm-linux-gnueabihf-g++
 
@@ -30,7 +28,9 @@ jobs:
         go-version: '1.21'
 
     - name: Build
-      run: go build -o=./imbot -v .
+      run: env CGO_CFLAGS="-arch arm64" \ 
+      CGO_LDFLAGS="-arch arm64" \ 
+      go build -o=./imbot -v .
 
     - name: Test
       run: go test -v ./...
