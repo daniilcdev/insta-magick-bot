@@ -2,8 +2,7 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -13,21 +12,20 @@ import (
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	folderscanner "github.com/daniilcdev/insta-magick-bot/workers/folderScanner"
 	"github.com/joho/godotenv"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	godotenv.Load("./env/private/telegram.env",
+	godotenv.Load(
+		"./env/private/telegram.env",
+		"./env/private/db.env",
 		"./env/imagemagick.env",
-		"./env/private/db.env")
+	)
 
-	_, err := sql.Open(os.Getenv("DB_DRIVER"), os.Getenv("DB_CONN"))
+	db, err := adapters.OpenStorageConnection()
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
-	fmt.Println("db connected")
+	defer db.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -48,6 +46,7 @@ func main() {
 	go botClient.
 		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
 		WithLogger(&adapters.DefaultLoggerAdapter{}).
+		WithStorage(db).
 		Start()
 
 	interupt := make(chan os.Signal, 1)
