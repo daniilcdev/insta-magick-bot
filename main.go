@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"os"
 	"os/signal"
 	"time"
@@ -11,10 +13,21 @@ import (
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	folderscanner "github.com/daniilcdev/insta-magick-bot/workers/folderScanner"
 	"github.com/joho/godotenv"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	godotenv.Load("./env/private/telegram.env", "./env/imagemagick.env")
+	godotenv.Load("./env/private/telegram.env",
+		"./env/imagemagick.env",
+		"./env/private/db.env")
+
+	_, err := sql.Open(os.Getenv("DB_DRIVER"), os.Getenv("DB_CONN"))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("db connected")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
