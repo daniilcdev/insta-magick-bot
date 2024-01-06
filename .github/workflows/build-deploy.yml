@@ -10,6 +10,9 @@ on:
 env:
   GOOS: linux
   GOARCH: arm64
+  CGO_ENABLED: 1
+  CC: aarch64-linux-gnu-gcc
+  CXX: aarch64-linux-gnu-g++
 
 jobs:
   build:
@@ -33,6 +36,7 @@ jobs:
     - name: Deploy
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
+        goose -dir=schemas sqlite3 ${{secrets.RUNTIME_DIRECTORY}}/${{secrets.DB_NAME}} up
         sudo systemctl stop imbot
         mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
         sudo systemctl start imbot

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -14,7 +15,17 @@ import (
 )
 
 func main() {
-	godotenv.Load("./env/private/telegram.env", "./env/imagemagick.env")
+	godotenv.Load(
+		"./env/private/telegram.env",
+		"./env/private/db.env",
+		"./env/imagemagick.env",
+	)
+
+	db, err := adapters.OpenStorageConnection()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -35,8 +46,13 @@ func main() {
 	go botClient.
 		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
 		WithLogger(&adapters.DefaultLoggerAdapter{}).
+		WithStorage(db).
 		Start()
 
+	waitForExit()
+}
+
+func waitForExit() {
 	interupt := make(chan os.Signal, 1)
 	signal.Notify(interupt, os.Interrupt)
 	<-interupt

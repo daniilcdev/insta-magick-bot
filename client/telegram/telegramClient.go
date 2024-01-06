@@ -53,6 +53,11 @@ func (tc *TelegramClient) WithLogger(logger Logger) *TelegramClient {
 	return tc
 }
 
+func (tc *TelegramClient) WithStorage(storage Storage) *TelegramClient {
+	tc.imgLoader.storage = storage
+	return tc
+}
+
 func (tc *TelegramClient) Start() {
 	if tc.bot == nil {
 		panic("can't start client - bot wasn't set")

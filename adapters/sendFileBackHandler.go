@@ -11,21 +11,20 @@ import (
 )
 
 type SendFileBackHandler struct {
-	Log    telegram.Logger
-	Client *telegram.TelegramClient
+	Log     telegram.Logger
+	Client  *telegram.TelegramClient
+	Storage telegram.Storage
 }
 
 func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string, entries []fs.DirEntry) {
-	telegram.Mu.Lock()
-
 	wg := sync.WaitGroup{}
 	for _, entry := range entries {
 		fileName := entry.Name()
 
-		chatId, ok := telegram.ImgToChatMap[fileName]
+		chatId, err := sb.Storage.GetRequester(fileName)
 
-		if !ok {
-			sb.Log.Warn(fmt.Sprintf("chatId not found for file %s", fileName))
+		if err != nil {
+			sb.Log.Warn(fmt.Sprintf("chatId not found for file: %s", fileName))
 			continue
 		}
 
@@ -42,11 +41,9 @@ func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string, entries []fs.Dir
 			Data:     f,
 		})
 
-		delete(telegram.ImgToChatMap, fileName)
+		sb.Storage.RemoveRequest(fileName)
 		os.Remove(dir + fileName)
 	}
-
-	telegram.Mu.Unlock()
 
 	wg.Wait()
 }
