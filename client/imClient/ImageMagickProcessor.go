@@ -22,8 +22,7 @@ func NewProcessor(sourceDir, outDir string) *IMProcessor {
 }
 
 func (im *IMProcessor) Naturalize(filename string) {
-	cmd := exec.Command("convert",
-		im.inDir+filename,
+	cmd := exec.Command("mogrify",
 		"-adaptive-sharpen",
 		"10%",
 		"-separate",
@@ -32,7 +31,9 @@ func (im *IMProcessor) Naturalize(filename string) {
 		"-combine",
 		"-enhance",
 		"-auto-level",
-		im.outDir+filename,
+		"-path",
+		im.outDir,
+		im.inDir+"*.jpg",
 	)
 
 	stdout, err := cmd.Output()
