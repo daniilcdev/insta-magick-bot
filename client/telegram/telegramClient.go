@@ -3,44 +3,48 @@ package telegram
 import (
 	"context"
 	"errors"
-	"io"
-	"net/http"
-	"os"
+	"fmt"
 	"path"
 	"strings"
-	"time"
 
-	folderscanner "github.com/daniilcdev/insta-magick-bot/workers/folderScanner"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
 type TelegramClient struct {
-	log Logger
-	bot *tg.Bot
-	ctx context.Context
+	log       Logger
+	bot       *tg.Bot
+	imgLoader *imageWebLoader
+	ctx       context.Context
 }
 
-func NewBotClient(ctx context.Context, botToken string) (*TelegramClient, error) {
-	if botToken == "" {
-		panic(errors.New("missing token"))
-	}
-
+func NewBotClient(ctx context.Context) *TelegramClient {
 	tgc := TelegramClient{
 		log: nil,
 	}
 
-	b, err := tg.New(botToken)
-	if err != nil {
-		return nil, err
+	tgc.ctx = ctx
+	tgc.log = &nopLoggerAdapter{}
+	tgc.imgLoader = &imageWebLoader{}
+	return &tgc
+}
+
+func (tc *TelegramClient) WithToken(token string) *TelegramClient {
+	if token == "" {
+		panic(errors.New("missing token"))
 	}
 
-	b.RegisterHandler(tg.HandlerTypeMessageText, "/start", tg.MatchTypeExact, tgc.StartHandler)
-	b.RegisterHandlerMatchFunc(tgc.PhotoMessageMatch, tgc.PhotoMessageHandler)
+	b, err := tg.New(token)
+	if err != nil {
+		return tc
+	}
 
-	tgc.bot = b
-	tgc.ctx = ctx
-	return &tgc, nil
+	b.RegisterHandler(tg.HandlerTypeMessageText, "/start", tg.MatchTypeExact, tc.StartHandler)
+	b.RegisterHandlerMatchFunc(tc.PhotoMessageMatch, tc.PhotoMessageHandler)
+
+	tc.bot = b
+
+	return tc
 }
 
 func (tc *TelegramClient) WithLogger(logger Logger) *TelegramClient {
@@ -87,36 +91,18 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 	bot.SendMessage(ctx,
 		&tg.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
-			Text:   "Processing file, please wait...",
+			Text:   "Result will be sent back shortly...",
 		},
 	)
 
-	go downloadPhoto(dlLink, filename)
-}
-
-func downloadPhoto(url, name string) error {
-	response, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != 200 {
-		return errors.New("received non-200 response code")
+	dlParams := downloadParams{
+		url:         dlLink,
+		outFilename: file.FileID + path.Ext(dlLink),
+		outDir:      "./res/raw/",
+		requesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
 	}
 
-	file, err := os.Create("./res/raw/" + name)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	go tc.imgLoader.downloadPhoto(dlParams)
 }
 
 func (tc *TelegramClient) StartHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
@@ -128,9 +114,9 @@ func (tc *TelegramClient) StartHandler(ctx context.Context, bot *tg.Bot, update 
 }
 
 func (tc *TelegramClient) Start() {
-	scanner_sendback := folderscanner.FileScanner{}
-	scanner_sendback.FoundFileHandler = tc
-	go scanner_sendback.KeepScanning(tc.ctx, os.Getenv("IM_OUT_DIR"), 3*time.Second)
+	if tc.bot == nil {
+		panic("can't start client - bot wasn't set")
+	}
 
 	tc.log.Info("Bot started")
 	tc.bot.Start(tc.ctx)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -21,14 +20,18 @@ func main() {
 
 	scanner_receive := folderscanner.FileScanner{}
 	scanner_receive.FoundFileHandler = imclient.NewProcessor(os.Getenv("IM_IN_DIR"), os.Getenv("IM_OUT_DIR"))
-	go scanner_receive.KeepScanning(ctx, "./res/raw/", 2*time.Second)
+	go scanner_receive.KeepScanning(ctx, "./res/raw/", 20*time.Second)
 
-	botClient, err := telegram.NewBotClient(ctx, os.Getenv("TELEGRAM_BOT_TOKEN"))
-	if err != nil {
-		log.Default().Println(err)
-	}
+	botClient := telegram.NewBotClient(ctx)
 
-	go botClient.WithLogger(&DefaultLoggerAdapter{}).Start()
+	scanner_sendback := folderscanner.FileScanner{}
+	scanner_sendback.FoundFileHandler = botClient
+	go scanner_sendback.KeepScanning(ctx, os.Getenv("IM_OUT_DIR"), 30*time.Second)
+
+	go botClient.
+		WithLogger(&DefaultLoggerAdapter{}).
+		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
+		Start()
 
 	interupt := make(chan os.Signal, 1)
 	signal.Notify(interupt, os.Interrupt)
