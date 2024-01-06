@@ -8,15 +8,15 @@ import (
 	"time"
 )
 
-type FileHandler interface {
-	ProcessNewFile(dir string, entry fs.DirEntry)
+type FolderHandler interface {
+	ProcessNewFilesInDir(dir string, entries []fs.DirEntry)
 }
 
-type FileScanner struct {
-	FoundFileHandler FileHandler
+type FolderScanner struct {
+	FoundFilesHandler FolderHandler
 }
 
-func (s *FileScanner) KeepScanning(ctx context.Context, path string, period time.Duration) {
+func (s *FolderScanner) KeepScanning(ctx context.Context, path string, period time.Duration) {
 	ticker := time.NewTicker(period)
 	for {
 		select {
@@ -40,13 +40,10 @@ func (s *FileScanner) KeepScanning(ctx context.Context, path string, period time
 	}
 }
 
-func (s *FileScanner) processFiles(path string, files []fs.DirEntry) {
-	if s.FoundFileHandler == nil {
+func (s *FolderScanner) processFiles(path string, files []fs.DirEntry) {
+	if s.FoundFilesHandler == nil {
 		fmt.Println("no func of process")
 		return
 	}
-
-	for _, entry := range files {
-		s.FoundFileHandler.ProcessNewFile(path, entry)
-	}
+	s.FoundFilesHandler.ProcessNewFilesInDir(path, files)
 }

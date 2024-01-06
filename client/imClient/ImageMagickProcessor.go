@@ -7,23 +7,18 @@ import (
 	"os/exec"
 )
 
-// const cmd_NORMALIZE_fmt = "%s -normalize -auto-gamma %s"
-
 type IMProcessor struct {
-	inDir  string
 	outDir string
 }
 
-func NewProcessor(sourceDir, outDir string) *IMProcessor {
+func NewProcessor(outDir string) *IMProcessor {
 	return &IMProcessor{
-		inDir:  sourceDir,
 		outDir: outDir,
 	}
 }
 
-func (im *IMProcessor) Naturalize(filename string) {
-	cmd := exec.Command("convert",
-		im.inDir+filename,
+func (im *IMProcessor) Naturalize(inDir string) {
+	cmd := exec.Command("mogrify",
 		"-adaptive-sharpen",
 		"10%",
 		"-separate",
@@ -32,7 +27,9 @@ func (im *IMProcessor) Naturalize(filename string) {
 		"-combine",
 		"-enhance",
 		"-auto-level",
-		im.outDir+filename,
+		"-path",
+		im.outDir,
+		inDir+"*.jpg",
 	)
 
 	stdout, err := cmd.Output()
@@ -47,17 +44,12 @@ func (im *IMProcessor) Naturalize(filename string) {
 	}
 }
 
-func (im *IMProcessor) ProcessNewFile(path string, entry fs.DirEntry) {
-	filename := entry.Name()
-	source := path + filename
-	pending := im.inDir + filename
+func (im *IMProcessor) ProcessNewFilesInDir(path string, entries []fs.DirEntry) {
+	im.Naturalize(path)
 
-	err := os.Rename(source, pending)
-	if err != nil {
-		fmt.Printf("failed to move file %s: %v\n", filename, err)
-		return
+	for _, entry := range entries {
+		filename := entry.Name()
+		pending := path + filename
+		os.Remove(pending)
 	}
-
-	im.Naturalize(filename)
-	os.Remove(pending)
 }

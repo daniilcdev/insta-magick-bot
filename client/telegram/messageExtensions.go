@@ -1,6 +1,10 @@
 package telegram
 
-import "github.com/go-telegram/bot/models"
+import (
+	"errors"
+
+	"github.com/go-telegram/bot/models"
+)
 
 func getFileId(m *models.Message) (string, error) {
 
@@ -11,5 +15,5 @@ func getFileId(m *models.Message) (string, error) {
 		return m.Document.FileID, nil
 	}
 
-	return "", nil
+	return "", errors.New("no file in message")
 }

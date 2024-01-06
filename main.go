@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/daniilcdev/insta-magick-bot/adapters"
 	imclient "github.com/daniilcdev/insta-magick-bot/client/imClient"
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	folderscanner "github.com/daniilcdev/insta-magick-bot/workers/folderScanner"
@@ -19,16 +19,23 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	scanner_receive := folderscanner.FileScanner{}
-	scanner_receive.FoundFileHandler = imclient.NewProcessor(os.Getenv("IM_IN_DIR"), os.Getenv("IM_OUT_DIR"))
-	go scanner_receive.KeepScanning(ctx, "./res/raw/", 2*time.Second)
+	scanner_receive := folderscanner.FolderScanner{}
+	scanner_receive.FoundFilesHandler = imclient.NewProcessor(os.Getenv("IM_OUT_DIR"))
+	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 20*time.Second)
 
-	botClient, err := telegram.NewBotClient(ctx, os.Getenv("TELEGRAM_BOT_TOKEN"))
-	if err != nil {
-		log.Default().Println(err)
+	botClient := telegram.NewBotClient(ctx)
+
+	scanner_sendback := folderscanner.FolderScanner{}
+	scanner_sendback.FoundFilesHandler = &adapters.SendFileBackHandler{
+		Log:    &adapters.DefaultLoggerAdapter{},
+		Client: botClient,
 	}
+	go scanner_sendback.KeepScanning(ctx, os.Getenv("IM_OUT_DIR"), 30*time.Second)
 
-	go botClient.Start()
+	go botClient.
+		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
+		WithLogger(&adapters.DefaultLoggerAdapter{}).
+		Start()
 
 	interupt := make(chan os.Signal, 1)
 	signal.Notify(interupt, os.Interrupt)
