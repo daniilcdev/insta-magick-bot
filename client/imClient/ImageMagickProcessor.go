@@ -3,11 +3,8 @@ package imclient
 import (
 	"fmt"
 	"io/fs"
-	"os"
 	"os/exec"
 )
-
-// const cmd_NORMALIZE_fmt = "%s -normalize -auto-gamma %s"
 
 type IMProcessor struct {
 	inDir  string
@@ -21,7 +18,7 @@ func NewProcessor(sourceDir, outDir string) *IMProcessor {
 	}
 }
 
-func (im *IMProcessor) Naturalize(filename string) {
+func (im *IMProcessor) Naturalize() {
 	cmd := exec.Command("mogrify",
 		"-adaptive-sharpen",
 		"10%",
@@ -49,16 +46,5 @@ func (im *IMProcessor) Naturalize(filename string) {
 }
 
 func (im *IMProcessor) ProcessNewFile(path string, entry fs.DirEntry) {
-	filename := entry.Name()
-	source := path + filename
-	pending := im.inDir + filename
-
-	err := os.Rename(source, pending)
-	if err != nil {
-		fmt.Printf("failed to move file %s: %v\n", filename, err)
-		return
-	}
-
-	im.Naturalize(filename)
-	os.Remove(pending)
+	im.Naturalize()
 }
