@@ -15,7 +15,7 @@ type SendFileBackHandler struct {
 	Client *telegram.TelegramClient
 }
 
-func (sb *SendFileBackHandler) ProcessNewFile(dir string, entries []fs.DirEntry) {
+func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string, entries []fs.DirEntry) {
 	telegram.Mu.Lock()
 
 	wg := sync.WaitGroup{}

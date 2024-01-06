@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-type FileHandler interface {
-	ProcessNewFile(dir string, entries []fs.DirEntry)
+type FolderHandler interface {
+	ProcessNewFilesInDir(dir string, entries []fs.DirEntry)
 }
 
 type FolderScanner struct {
-	FoundFileHandler FileHandler
+	FoundFilesHandler FolderHandler
 }
 
 func (s *FolderScanner) KeepScanning(ctx context.Context, path string, period time.Duration) {
@@ -41,9 +41,9 @@ func (s *FolderScanner) KeepScanning(ctx context.Context, path string, period ti
 }
 
 func (s *FolderScanner) processFiles(path string, files []fs.DirEntry) {
-	if s.FoundFileHandler == nil {
+	if s.FoundFilesHandler == nil {
 		fmt.Println("no func of process")
 		return
 	}
-	s.FoundFileHandler.ProcessNewFile(path, files)
+	s.FoundFilesHandler.ProcessNewFilesInDir(path, files)
 }

@@ -44,7 +44,7 @@ func (im *IMProcessor) Naturalize(inDir string) {
 	}
 }
 
-func (im *IMProcessor) ProcessNewFile(path string, entries []fs.DirEntry) {
+func (im *IMProcessor) ProcessNewFilesInDir(path string, entries []fs.DirEntry) {
 	im.Naturalize(path)
 
 	for _, entry := range entries {
