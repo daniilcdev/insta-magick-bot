@@ -11,6 +11,8 @@ env:
   GOOS: linux
   GOARCH: arm64
   CGO_ENABLED: 1
+  CC: arm-linux-gnueabihf-gcc
+  CXX: arm-linux-gnueabihf-g++
 
 jobs:
   build:
