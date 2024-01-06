@@ -28,9 +28,7 @@ jobs:
         go-version: '1.21'
 
     - name: Build
-      run: env CGO_CFLAGS="-arch arm64" \ 
-      CGO_LDFLAGS="-arch arm64" \ 
-      go build -o=./imbot -v .
+      run: env CGO_CFLAGS="-arch arm64" CGO_LDFLAGS="-arch arm64" go build -o=./imbot -v .
 
     - name: Test
       run: go test -v ./...
