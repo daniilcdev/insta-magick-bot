@@ -5,7 +5,7 @@ name: Build&Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "feature/sqlite-storage" ]
 
 env:
   GOOS: linux
@@ -33,6 +33,7 @@ jobs:
     - name: Deploy
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
+        goose sqlite3 -dir=schemas ${{secrets.RUNTIME_DIRECTORY}}/${{secrets.DB_NAME}} up
         sudo systemctl stop imbot
         mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
         sudo systemctl start imbot
