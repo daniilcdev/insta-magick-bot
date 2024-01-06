@@ -16,3 +16,13 @@ Create new migration file:
 ```shell
 goose -dir=schemas create <brief_description> sql
 ```
+
+### Build on Raspberry Pi 4
+
+To build successfully, install proper compiler:
+```shell
+apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
+```
+and set env variables before build:
+
+`CC=aarch64-linux-gnu-gcc` `CXX=aarch64-linux-gnu-g++`
