@@ -5,7 +5,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 )
+
+// TODO: implement DB storage
+var Mu sync.Mutex = sync.Mutex{}
+var ImgToChatMap map[string]string = make(map[string]string)
 
 type imageWebLoader struct {
 }
@@ -38,6 +43,10 @@ func (iwl *imageWebLoader) downloadPhoto(params downloadParams) error {
 	if err != nil {
 		return err
 	}
+
+	defer Mu.Unlock()
+	Mu.Lock()
+	ImgToChatMap[params.outFilename] = params.requesterId
 
 	return nil
 }

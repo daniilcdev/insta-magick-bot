@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/daniilcdev/insta-magick-bot/adapters"
 	imclient "github.com/daniilcdev/insta-magick-bot/client/imClient"
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	folderscanner "github.com/daniilcdev/insta-magick-bot/workers/folderScanner"
@@ -25,12 +26,15 @@ func main() {
 	botClient := telegram.NewBotClient(ctx)
 
 	scanner_sendback := folderscanner.FileScanner{}
-	scanner_sendback.FoundFileHandler = botClient
+	scanner_sendback.FoundFileHandler = &adapters.SendFileBackHandler{
+		Log:    &adapters.DefaultLoggerAdapter{},
+		Client: botClient,
+	}
 	go scanner_sendback.KeepScanning(ctx, os.Getenv("IM_OUT_DIR"), 30*time.Second)
 
 	go botClient.
-		WithLogger(&DefaultLoggerAdapter{}).
 		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
+		WithLogger(&adapters.DefaultLoggerAdapter{}).
 		Start()
 
 	interupt := make(chan os.Signal, 1)

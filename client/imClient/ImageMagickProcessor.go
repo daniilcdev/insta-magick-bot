@@ -3,6 +3,7 @@ package imclient
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"os/exec"
 )
 
@@ -47,4 +48,8 @@ func (im *IMProcessor) Naturalize() {
 
 func (im *IMProcessor) ProcessNewFile(path string, entry fs.DirEntry) {
 	im.Naturalize()
+
+	filename := entry.Name()
+	pending := im.inDir + filename
+	os.Remove(pending)
 }

@@ -39,8 +39,8 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 		return tc
 	}
 
-	b.RegisterHandler(tg.HandlerTypeMessageText, "/start", tg.MatchTypeExact, tc.StartHandler)
-	b.RegisterHandlerMatchFunc(tc.PhotoMessageMatch, tc.PhotoMessageHandler)
+	b.RegisterHandler(tg.HandlerTypeMessageText, "/start", tg.MatchTypeExact, tc.startHandler)
+	b.RegisterHandlerMatchFunc(tc.photoMessageMatch, tc.photoMessageHandler)
 
 	tc.bot = b
 
@@ -52,7 +52,30 @@ func (tc *TelegramClient) WithLogger(logger Logger) *TelegramClient {
 	return tc
 }
 
-func (tc *TelegramClient) PhotoMessageMatch(update *models.Update) bool {
+func (tc *TelegramClient) Start() {
+	if tc.bot == nil {
+		panic("can't start client - bot wasn't set")
+	}
+
+	tc.log.Info("Bot started")
+	tc.bot.Start(tc.ctx)
+}
+
+func (tc *TelegramClient) SendPhoto(chatId any, inputFile models.InputFile) {
+	params := &tg.SendPhotoParams{
+		ChatID: chatId,
+		Photo:  inputFile,
+	}
+
+	_, err := tc.bot.SendPhoto(tc.ctx, params)
+
+	if err != nil {
+		tc.log.Err(fmt.Sprintf("failed to send image back %v", err))
+		return
+	}
+}
+
+func (tc *TelegramClient) photoMessageMatch(update *models.Update) bool {
 	switch {
 	case update.Message.Document != nil && strings.HasPrefix(update.Message.Document.MimeType, "image"):
 		return true
@@ -63,7 +86,7 @@ func (tc *TelegramClient) PhotoMessageMatch(update *models.Update) bool {
 	}
 }
 
-func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
+func (tc *TelegramClient) photoMessageHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	params := tg.GetFileParams{}
 	fileId, err := getFileId(update.Message)
 	if err != nil {
@@ -82,11 +105,6 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 	}
 
 	dlLink := bot.FileDownloadLink(file)
-	filename := file.FileID + path.Ext(dlLink)
-
-	defer mu.Unlock()
-	mu.Lock()
-	imgToChatMap[filename] = update.Message.Chat.ID
 
 	bot.SendMessage(ctx,
 		&tg.SendMessageParams{
@@ -105,19 +123,10 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 	go tc.imgLoader.downloadPhoto(dlParams)
 }
 
-func (tc *TelegramClient) StartHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
+func (tc *TelegramClient) startHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	bot.SendMessage(ctx, &tg.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text: `Отправьте изображение для обработки.
 		В силу текущих ограничений, пожалуйста, отправляйте по одному изображению за раз.`,
 	})
-}
-
-func (tc *TelegramClient) Start() {
-	if tc.bot == nil {
-		panic("can't start client - bot wasn't set")
-	}
-
-	tc.log.Info("Bot started")
-	tc.bot.Start(tc.ctx)
 }
