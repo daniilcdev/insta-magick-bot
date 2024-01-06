@@ -11,6 +11,8 @@ env:
   GOOS: linux
   GOARCH: arm64
   CGO_ENABLED: 1
+  CGO_CFLAGS: "-arch arm64"
+  CGO_LDFLAGS: "-arch arm64"
   CC: arm-linux-gnueabihf-gcc
   CXX: arm-linux-gnueabihf-g++
 
