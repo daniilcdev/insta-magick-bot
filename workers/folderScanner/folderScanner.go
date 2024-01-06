@@ -9,14 +9,14 @@ import (
 )
 
 type FileHandler interface {
-	ProcessNewFile(dir string, entry fs.DirEntry)
+	ProcessNewFile(dir string, entries []fs.DirEntry)
 }
 
-type FileScanner struct {
+type FolderScanner struct {
 	FoundFileHandler FileHandler
 }
 
-func (s *FileScanner) KeepScanning(ctx context.Context, path string, period time.Duration) {
+func (s *FolderScanner) KeepScanning(ctx context.Context, path string, period time.Duration) {
 	ticker := time.NewTicker(period)
 	for {
 		select {
@@ -40,13 +40,10 @@ func (s *FileScanner) KeepScanning(ctx context.Context, path string, period time
 	}
 }
 
-func (s *FileScanner) processFiles(path string, files []fs.DirEntry) {
+func (s *FolderScanner) processFiles(path string, files []fs.DirEntry) {
 	if s.FoundFileHandler == nil {
 		fmt.Println("no func of process")
 		return
 	}
-
-	for _, entry := range files {
-		s.FoundFileHandler.ProcessNewFile(path, entry)
-	}
+	s.FoundFileHandler.ProcessNewFile(path, files)
 }

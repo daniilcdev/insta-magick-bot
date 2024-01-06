@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"sync"
 
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -61,7 +62,9 @@ func (tc *TelegramClient) Start() {
 	tc.bot.Start(tc.ctx)
 }
 
-func (tc *TelegramClient) SendPhoto(chatId any, inputFile models.InputFile) {
+func (tc *TelegramClient) SendPhoto(wg *sync.WaitGroup, chatId any, inputFile models.InputFile) {
+	defer wg.Done()
+
 	params := &tg.SendPhotoParams{
 		ChatID: chatId,
 		Photo:  inputFile,
@@ -87,36 +90,36 @@ func (tc *TelegramClient) photoMessageMatch(update *models.Update) bool {
 }
 
 func (tc *TelegramClient) photoMessageHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
-	params := tg.GetFileParams{}
 	fileId, err := getFileId(update.Message)
 	if err != nil {
 		tc.log.Err(err.Error())
 		return
 	}
 
-	params.FileID = fileId
-	file, err := bot.GetFile(ctx, &params)
-	if err != nil {
-		bot.SendMessage(ctx, &tg.SendMessageParams{
-			ChatID: update.Message.Chat.ID,
-			Text:   "Failed to download image: " + err.Error(),
-		},
-		)
-	}
-
-	dlLink := bot.FileDownloadLink(file)
-
-	bot.SendMessage(ctx,
+	go bot.SendMessage(ctx,
 		&tg.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
 			Text:   "Result will be sent back shortly...",
 		},
 	)
 
+	params := tg.GetFileParams{}
+	params.FileID = fileId
+	file, err := bot.GetFile(ctx, &params)
+	if err != nil {
+		bot.SendMessage(ctx, &tg.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   "Failed to request image file: " + err.Error(),
+		},
+		)
+		return
+	}
+
+	dlLink := bot.FileDownloadLink(file)
 	dlParams := downloadParams{
 		url:         dlLink,
 		outFilename: file.FileID + path.Ext(dlLink),
-		outDir:      "./res/raw/",
+		outDir:      "./res/pending/",
 		requesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
 	}
 

@@ -8,18 +8,16 @@ import (
 )
 
 type IMProcessor struct {
-	inDir  string
 	outDir string
 }
 
-func NewProcessor(sourceDir, outDir string) *IMProcessor {
+func NewProcessor(outDir string) *IMProcessor {
 	return &IMProcessor{
-		inDir:  sourceDir,
 		outDir: outDir,
 	}
 }
 
-func (im *IMProcessor) Naturalize() {
+func (im *IMProcessor) Naturalize(inDir string) {
 	cmd := exec.Command("mogrify",
 		"-adaptive-sharpen",
 		"10%",
@@ -31,7 +29,7 @@ func (im *IMProcessor) Naturalize() {
 		"-auto-level",
 		"-path",
 		im.outDir,
-		im.inDir+"*.jpg",
+		inDir+"*.jpg",
 	)
 
 	stdout, err := cmd.Output()
@@ -46,10 +44,12 @@ func (im *IMProcessor) Naturalize() {
 	}
 }
 
-func (im *IMProcessor) ProcessNewFile(path string, entry fs.DirEntry) {
-	im.Naturalize()
+func (im *IMProcessor) ProcessNewFile(path string, entries []fs.DirEntry) {
+	im.Naturalize(path)
 
-	filename := entry.Name()
-	pending := im.inDir + filename
-	os.Remove(pending)
+	for _, entry := range entries {
+		filename := entry.Name()
+		pending := path + filename
+		os.Remove(pending)
+	}
 }

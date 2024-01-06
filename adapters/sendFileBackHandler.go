@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"sync"
 
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	"github.com/go-telegram/bot/models"
@@ -14,30 +15,38 @@ type SendFileBackHandler struct {
 	Client *telegram.TelegramClient
 }
 
-func (sb *SendFileBackHandler) ProcessNewFile(dir string, entry fs.DirEntry) {
-	defer telegram.Mu.Unlock()
-	fileName := entry.Name()
-
+func (sb *SendFileBackHandler) ProcessNewFile(dir string, entries []fs.DirEntry) {
 	telegram.Mu.Lock()
-	chatId, ok := telegram.ImgToChatMap[fileName]
 
-	if !ok {
-		sb.Log.Warn(fmt.Sprintf("chatId not found for file %s", fileName))
-		return
+	wg := sync.WaitGroup{}
+	for _, entry := range entries {
+		fileName := entry.Name()
+
+		chatId, ok := telegram.ImgToChatMap[fileName]
+
+		if !ok {
+			sb.Log.Warn(fmt.Sprintf("chatId not found for file %s", fileName))
+			continue
+		}
+
+		f, err := os.Open(dir + fileName)
+		if err != nil {
+			sb.Log.Err(fmt.Sprintf("can't open file %v", err))
+			continue
+		}
+		defer f.Close()
+
+		wg.Add(1)
+		go sb.Client.SendPhoto(&wg, chatId, &models.InputFileUpload{
+			Filename: fileName,
+			Data:     f,
+		})
+
+		delete(telegram.ImgToChatMap, fileName)
+		os.Remove(dir + fileName)
 	}
 
-	f, err := os.Open(dir + fileName)
-	if err != nil {
-		sb.Log.Err(fmt.Sprintf("can't open file %v", err))
-		return
-	}
-	defer f.Close()
+	telegram.Mu.Unlock()
 
-	sb.Client.SendPhoto(chatId, &models.InputFileUpload{
-		Filename: fileName,
-		Data:     f,
-	})
-
-	delete(telegram.ImgToChatMap, fileName)
-	os.Remove(dir + fileName)
+	wg.Wait()
 }

@@ -19,13 +19,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	scanner_receive := folderscanner.FileScanner{}
-	scanner_receive.FoundFileHandler = imclient.NewProcessor(os.Getenv("IM_IN_DIR"), os.Getenv("IM_OUT_DIR"))
-	go scanner_receive.KeepScanning(ctx, "./res/raw/", 20*time.Second)
+	scanner_receive := folderscanner.FolderScanner{}
+	scanner_receive.FoundFileHandler = imclient.NewProcessor(os.Getenv("IM_OUT_DIR"))
+	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 20*time.Second)
 
 	botClient := telegram.NewBotClient(ctx)
 
-	scanner_sendback := folderscanner.FileScanner{}
+	scanner_sendback := folderscanner.FolderScanner{}
 	scanner_sendback.FoundFileHandler = &adapters.SendFileBackHandler{
 		Log:    &adapters.DefaultLoggerAdapter{},
 		Client: botClient,
