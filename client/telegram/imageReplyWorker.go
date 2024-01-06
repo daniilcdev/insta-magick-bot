@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"sync"
@@ -20,13 +21,13 @@ func (tc *TelegramClient) ProcessNewFile(dir string, entry fs.DirEntry) {
 	chatId, ok := imgToChatMap[fileName]
 
 	if !ok {
-		tc.log.Printf("[WARN] chatId not found for file %s\n", fileName)
+		tc.log.Warn(fmt.Sprintf("chatId not found for file %s", fileName))
 		return
 	}
 
 	f, err := os.Open(dir + fileName)
 	if err != nil {
-		tc.log.Printf("[ERROR] can't open file %v\n", err)
+		tc.log.Err(fmt.Sprintf("can't open file %v", err))
 		return
 	}
 	defer f.Close()
@@ -42,7 +43,7 @@ func (tc *TelegramClient) ProcessNewFile(dir string, entry fs.DirEntry) {
 	_, err = tc.bot.SendPhoto(tc.ctx, params)
 
 	if err != nil {
-		tc.log.Printf("[ERROR] failed to send image back %v\n", err)
+		tc.log.Err(fmt.Sprintf("failed to send image back %v", err))
 		return
 	}
 

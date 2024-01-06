@@ -28,7 +28,7 @@ func main() {
 		log.Default().Println(err)
 	}
 
-	go botClient.Start()
+	go botClient.WithLogger(&DefaultLoggerAdapter{}).Start()
 
 	interupt := make(chan os.Signal, 1)
 	signal.Notify(interupt, os.Interrupt)

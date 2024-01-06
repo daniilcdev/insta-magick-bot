@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -17,7 +16,7 @@ import (
 )
 
 type TelegramClient struct {
-	log log.Logger
+	log Logger
 	bot *tg.Bot
 	ctx context.Context
 }
@@ -28,16 +27,11 @@ func NewBotClient(ctx context.Context, botToken string) (*TelegramClient, error)
 	}
 
 	tgc := TelegramClient{
-		log: *log.Default(),
+		log: nil,
 	}
 
-	opts := []tg.Option{
-		// bot.WithDefaultHandler(ctb.DefaultHandler),
-	}
-
-	b, err := tg.New(botToken, opts...)
+	b, err := tg.New(botToken)
 	if err != nil {
-		tgc.log.Println(err)
 		return nil, err
 	}
 
@@ -47,6 +41,11 @@ func NewBotClient(ctx context.Context, botToken string) (*TelegramClient, error)
 	tgc.bot = b
 	tgc.ctx = ctx
 	return &tgc, nil
+}
+
+func (tc *TelegramClient) WithLogger(logger Logger) *TelegramClient {
+	tc.log = logger
+	return tc
 }
 
 func (tc *TelegramClient) PhotoMessageMatch(update *models.Update) bool {
@@ -64,7 +63,7 @@ func (tc *TelegramClient) PhotoMessageHandler(ctx context.Context, bot *tg.Bot, 
 	params := tg.GetFileParams{}
 	fileId, err := getFileId(update.Message)
 	if err != nil {
-		tc.log.Println("[WARN] unable to get fileId")
+		tc.log.Err(err.Error())
 		return
 	}
 
@@ -106,20 +105,17 @@ func downloadPhoto(url, name string) error {
 		return errors.New("received non-200 response code")
 	}
 
-	//Create a empty file
 	file, err := os.Create("./res/raw/" + name)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	//Write the bytes to the fiel
 	_, err = io.Copy(file, response.Body)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("new raw file: %s\n", name)
 	return nil
 }
 
@@ -136,6 +132,6 @@ func (tc *TelegramClient) Start() {
 	scanner_sendback.FoundFileHandler = tc
 	go scanner_sendback.KeepScanning(tc.ctx, os.Getenv("IM_OUT_DIR"), 3*time.Second)
 
-	tc.log.Println("[INFO] Bot started")
+	tc.log.Info("Bot started")
 	tc.bot.Start(tc.ctx)
 }
