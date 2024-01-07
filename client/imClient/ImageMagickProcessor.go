@@ -17,18 +17,19 @@ func NewProcessor(outDir string) *IMProcessor {
 	}
 }
 
-func (im *IMProcessor) Naturalize(inDir string) {
+// V1: mogrify -adaptive-sharpen 10% -separate -contrast-stretch 0.5%x0.5% -combine -enhance -auto-level -path %im.outDir %inDir/*.jpg
+// V2: mogrify -adaptive-sharpen 10% -channel B -evaluate add 1.31 -channel G -evaluate add 1.37 +channel -modulate 120,142 -contrast-stretch -13%x-17% -enhance -path ../out *.jpg
+
+func (im *IMProcessor) Beautify(inDir string) {
 	cmd := exec.Command("mogrify",
-		"-adaptive-sharpen",
-		"10%",
-		"-separate",
-		"-contrast-stretch",
-		"0.5%x0.5%",
-		"-combine",
+		"-adaptive-sharpen", "10%",
+		"-channel", "B", "-evaluate", "add", "1.31",
+		"-channel", "G", "-evaluate", "add", "1.37",
+		"+channel",
+		"-modulate", "120,142",
+		"-contrast-stretch", "-13%x-17%",
 		"-enhance",
-		"-auto-level",
-		"-path",
-		im.outDir,
+		"-path", im.outDir,
 		inDir+"*.jpg",
 	)
 
@@ -45,7 +46,7 @@ func (im *IMProcessor) Naturalize(inDir string) {
 }
 
 func (im *IMProcessor) ProcessNewFilesInDir(path string, entries []fs.DirEntry) {
-	im.Naturalize(path)
+	im.Beautify(path)
 
 	for _, entry := range entries {
 		filename := entry.Name()
