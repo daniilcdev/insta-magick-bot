@@ -1,6 +1,6 @@
 -- name: CreateRequest :exec
-INSERT INTO requests (file, requester_id, status)
-VALUES (?, ?, "Pending");
+INSERT INTO requests (file, requester_id)
+VALUES (?, ?);
 
 -- name: SchedulePending :many
 UPDATE requests

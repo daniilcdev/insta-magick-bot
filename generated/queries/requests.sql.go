@@ -11,8 +11,8 @@ import (
 )
 
 const createRequest = `-- name: CreateRequest :exec
-INSERT INTO requests (file, requester_id, status)
-VALUES (?, ?, "Pending")
+INSERT INTO requests (file, requester_id)
+VALUES (?, ?)
 `
 
 type CreateRequestParams struct {
