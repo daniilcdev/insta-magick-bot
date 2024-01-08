@@ -47,8 +47,8 @@ func (s *SqliteStorage) NewRequest(file, requesterId string) {
 	}
 }
 
-func (s *SqliteStorage) GetPendingRequests(limit int64) []string {
-	rows, err := s.q.ObtainPendingFiles(context.Background(), limit)
+func (s *SqliteStorage) Schedule(limit int64) []string {
+	rows, err := s.q.SchedulePending(context.Background(), limit)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
 		return nil
@@ -57,33 +57,25 @@ func (s *SqliteStorage) GetPendingRequests(limit int64) []string {
 	return rows
 }
 
-func (s *SqliteStorage) GetRequester(file string) (string, error) {
-	result, err := s.q.GetRequest(context.Background(), file)
+func (s *SqliteStorage) GetCompleted() []queries.ObtainCompletedRow {
+	rows, err := s.q.ObtainCompleted(context.Background())
 	if err != nil {
-		return "", err
+		log.Printf("[ERROR] %v\n", err)
+		return nil
 	}
 
-	return result.RequesterID, nil
+	return rows
 }
 
-func (s *SqliteStorage) GetRequestersByFilenames(files []string) ([]queries.GetRequestersByFilenamesRow, error) {
-	result, err := s.q.GetRequestersByFilenames(context.Background(), files)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func (s *SqliteStorage) UpdateFilesStatus(files []string) {
-	err := s.q.UpdateFilesStatus(context.Background(), files)
+func (s *SqliteStorage) RemoveCompleted() {
+	err := s.q.DeleteCompletedRequests(context.Background())
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
 	}
 }
 
-func (s *SqliteStorage) RemoveRequest(file string) {
-	err := s.q.DeleteRequest(context.Background(), file)
+func (s *SqliteStorage) CompleteRequests(files []string) {
+	err := s.q.UpdateFilesStatus(context.Background(), files)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
 	}

@@ -31,7 +31,7 @@ func main() {
 	defer cancel()
 
 	scanner_receive := workers.PipelineTrigger{}
-	scanner_receive.Handler = imclient.NewProcessor(os.Getenv("IM_OUT_DIR"))
+	scanner_receive.Handler = imclient.NewProcessor(os.Getenv("IM_OUT_DIR"), db)
 	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 20*time.Second)
 
 	botClient := telegram.NewBotClient(ctx)

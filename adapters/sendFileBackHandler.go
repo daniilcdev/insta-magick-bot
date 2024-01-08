@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
+	"github.com/daniilcdev/insta-magick-bot/generated/queries"
 	"github.com/go-telegram/bot/models"
 )
 
@@ -16,16 +17,14 @@ type SendFileBackHandler struct {
 }
 
 func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string, files []string) {
-	defer func(d string, f []string) {
-		sb.Storage.UpdateFilesStatus(files)
+	responses := sb.Storage.GetCompleted()
 
+	defer func(d string, f []queries.ObtainCompletedRow) {
 		for _, r := range f {
-			os.Remove(d + r)
+			os.Remove(d + r.File)
 		}
 
-	}(dir, files)
-
-	responses, _ := sb.Storage.GetRequestersByFilenames(files)
+	}(dir, responses)
 
 	wg := sync.WaitGroup{}
 	for _, r := range responses {

@@ -25,65 +25,35 @@ func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) er
 	return err
 }
 
-const deleteRequest = `-- name: DeleteRequest :exec
+const deleteCompletedRequests = `-- name: DeleteCompletedRequests :exec
 DELETE FROM requests
-WHERE file = ?
+WHERE status = "Processed"
 `
 
-func (q *Queries) DeleteRequest(ctx context.Context, file string) error {
-	_, err := q.db.ExecContext(ctx, deleteRequest, file)
+func (q *Queries) DeleteCompletedRequests(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteCompletedRequests)
 	return err
 }
 
-const getRequest = `-- name: GetRequest :one
-SELECT id, file, requester_id, status
-FROM requests
-WHERE file = ?
-LIMIT 1
+const obtainCompleted = `-- name: ObtainCompleted :many
+SELECT file, requester_id FROM requests
+WHERE status = "Processed"
 `
 
-func (q *Queries) GetRequest(ctx context.Context, file string) (Request, error) {
-	row := q.db.QueryRowContext(ctx, getRequest, file)
-	var i Request
-	err := row.Scan(
-		&i.ID,
-		&i.File,
-		&i.RequesterID,
-		&i.Status,
-	)
-	return i, err
-}
-
-const getRequestersByFilenames = `-- name: GetRequestersByFilenames :many
-SELECT file, requester_id
-FROM requests
-WHERE file in (/*SLICE:filenames*/?)
-`
-
-type GetRequestersByFilenamesRow struct {
+type ObtainCompletedRow struct {
 	File        string
 	RequesterID string
 }
 
-func (q *Queries) GetRequestersByFilenames(ctx context.Context, filenames []string) ([]GetRequestersByFilenamesRow, error) {
-	query := getRequestersByFilenames
-	var queryParams []interface{}
-	if len(filenames) > 0 {
-		for _, v := range filenames {
-			queryParams = append(queryParams, v)
-		}
-		query = strings.Replace(query, "/*SLICE:filenames*/?", strings.Repeat(",?", len(filenames))[1:], 1)
-	} else {
-		query = strings.Replace(query, "/*SLICE:filenames*/?", "NULL", 1)
-	}
-	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+func (q *Queries) ObtainCompleted(ctx context.Context) ([]ObtainCompletedRow, error) {
+	rows, err := q.db.QueryContext(ctx, obtainCompleted)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetRequestersByFilenamesRow
+	var items []ObtainCompletedRow
 	for rows.Next() {
-		var i GetRequestersByFilenamesRow
+		var i ObtainCompletedRow
 		if err := rows.Scan(&i.File, &i.RequesterID); err != nil {
 			return nil, err
 		}
@@ -98,7 +68,7 @@ func (q *Queries) GetRequestersByFilenames(ctx context.Context, filenames []stri
 	return items, nil
 }
 
-const obtainPendingFiles = `-- name: ObtainPendingFiles :many
+const schedulePending = `-- name: SchedulePending :many
 UPDATE requests
 SET status = "Processing"
 WHERE id in (
@@ -110,8 +80,8 @@ WHERE id in (
 RETURNING file
 `
 
-func (q *Queries) ObtainPendingFiles(ctx context.Context, limit int64) ([]string, error) {
-	rows, err := q.db.QueryContext(ctx, obtainPendingFiles, limit)
+func (q *Queries) SchedulePending(ctx context.Context, limit int64) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, schedulePending, limit)
 	if err != nil {
 		return nil, err
 	}

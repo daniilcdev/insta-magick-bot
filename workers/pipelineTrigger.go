@@ -3,7 +3,6 @@ package workers
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
@@ -15,7 +14,7 @@ type TriggerHandler interface {
 
 type PipelineTrigger struct {
 	Handler TriggerHandler
-	storage telegram.Storage
+	Storage telegram.Storage
 }
 
 func (s *PipelineTrigger) KeepScanning(ctx context.Context, path string, period time.Duration) {
@@ -23,17 +22,10 @@ func (s *PipelineTrigger) KeepScanning(ctx context.Context, path string, period 
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("folder scanner stopped by cancel")
+			fmt.Println("pipeline trigger stopped by cancel")
 			return
 		case <-ticker.C:
-			const batchSize = 10
-
-			pending := s.storage.GetPendingRequests(batchSize)
-
-			if len(pending) > 0 {
-				log.Println("begin IM processing pipeline")
-				go s.processFiles(path, pending)
-			}
+			go s.processFiles(path, nil)
 
 			ticker.Reset(period)
 		}
