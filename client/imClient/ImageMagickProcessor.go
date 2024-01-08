@@ -2,7 +2,6 @@ package imclient
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 )
@@ -45,11 +44,10 @@ func (im *IMProcessor) Beautify(inDir string) {
 	}
 }
 
-func (im *IMProcessor) ProcessNewFilesInDir(path string, entries []fs.DirEntry) {
+func (im *IMProcessor) ProcessNewFilesInDir(path string, files []string) {
 	im.Beautify(path)
 
-	for _, entry := range entries {
-		filename := entry.Name()
+	for _, filename := range files {
 		pending := path + filename
 		os.Remove(pending)
 	}

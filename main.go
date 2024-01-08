@@ -10,7 +10,7 @@ import (
 	"github.com/daniilcdev/insta-magick-bot/adapters"
 	imclient "github.com/daniilcdev/insta-magick-bot/client/imClient"
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
-	folderscanner "github.com/daniilcdev/insta-magick-bot/workers/folderScanner"
+	"github.com/daniilcdev/insta-magick-bot/workers"
 	"github.com/joho/godotenv"
 )
 
@@ -30,14 +30,14 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	scanner_receive := folderscanner.FolderScanner{}
-	scanner_receive.FoundFilesHandler = imclient.NewProcessor(os.Getenv("IM_OUT_DIR"))
+	scanner_receive := workers.PipelineTrigger{}
+	scanner_receive.Handler = imclient.NewProcessor(os.Getenv("IM_OUT_DIR"))
 	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 20*time.Second)
 
 	botClient := telegram.NewBotClient(ctx)
 
-	scanner_sendback := folderscanner.FolderScanner{}
-	scanner_sendback.FoundFilesHandler = &adapters.SendFileBackHandler{
+	scanner_sendback := workers.PipelineTrigger{}
+	scanner_sendback.Handler = &adapters.SendFileBackHandler{
 		Log:     &adapters.DefaultLoggerAdapter{},
 		Client:  botClient,
 		Storage: db,

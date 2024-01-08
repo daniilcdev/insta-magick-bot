@@ -47,6 +47,16 @@ func (s *SqliteStorage) NewRequest(file, requesterId string) {
 	}
 }
 
+func (s *SqliteStorage) GetPendingRequests(limit int64) []string {
+	rows, err := s.q.ObtainPendingFiles(context.Background(), limit)
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+		return nil
+	}
+
+	return rows
+}
+
 func (s *SqliteStorage) GetRequester(file string) (string, error) {
 	result, err := s.q.GetRequest(context.Background(), file)
 	if err != nil {
@@ -54,6 +64,22 @@ func (s *SqliteStorage) GetRequester(file string) (string, error) {
 	}
 
 	return result.RequesterID, nil
+}
+
+func (s *SqliteStorage) GetRequestersByFilenames(files []string) ([]queries.GetRequestersByFilenamesRow, error) {
+	result, err := s.q.GetRequestersByFilenames(context.Background(), files)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (s *SqliteStorage) UpdateFilesStatus(files []string) {
+	err := s.q.UpdateFilesStatus(context.Background(), files)
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+	}
 }
 
 func (s *SqliteStorage) RemoveRequest(file string) {
