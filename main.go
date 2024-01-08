@@ -32,7 +32,7 @@ func main() {
 
 	scanner_receive := workers.PipelineTrigger{}
 	scanner_receive.Handler = imclient.NewProcessor(os.Getenv("IM_OUT_DIR"), db)
-	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 20*time.Second)
+	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 30*time.Second)
 
 	botClient := telegram.NewBotClient(ctx)
 
@@ -42,7 +42,7 @@ func main() {
 		Client:  botClient,
 		Storage: db,
 	}
-	go scanner_sendback.KeepScanning(ctx, os.Getenv("IM_OUT_DIR"), 30*time.Second)
+	go scanner_sendback.KeepScanning(ctx, os.Getenv("IM_OUT_DIR"), 20*time.Second)
 
 	go botClient.
 		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
