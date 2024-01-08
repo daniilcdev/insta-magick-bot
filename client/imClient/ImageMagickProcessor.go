@@ -48,7 +48,7 @@ func (im *IMProcessor) Beautify(inDir string) {
 	}
 }
 
-func (im *IMProcessor) ProcessNewFilesInDir(path string, files []string) {
+func (im *IMProcessor) ProcessNewFilesInDir(path string) {
 	const batchSize = 10
 	pending := im.db.Schedule(batchSize)
 

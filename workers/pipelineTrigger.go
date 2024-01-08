@@ -9,7 +9,7 @@ import (
 )
 
 type TriggerHandler interface {
-	ProcessNewFilesInDir(dir string, entries []string)
+	ProcessNewFilesInDir(dir string)
 }
 
 type PipelineTrigger struct {
@@ -25,18 +25,18 @@ func (s *PipelineTrigger) KeepScanning(ctx context.Context, path string, period 
 			fmt.Println("pipeline trigger stopped by cancel")
 			return
 		case <-ticker.C:
-			go s.processFiles(path, nil)
+			go s.processFiles(path)
 
 			ticker.Reset(period)
 		}
 	}
 }
 
-func (s *PipelineTrigger) processFiles(path string, files []string) {
+func (s *PipelineTrigger) processFiles(path string) {
 	if s.Handler == nil {
 		fmt.Println("no func of process")
 		return
 	}
 
-	s.Handler.ProcessNewFilesInDir(path, files)
+	s.Handler.ProcessNewFilesInDir(path)
 }
