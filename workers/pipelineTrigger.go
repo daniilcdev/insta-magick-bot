@@ -41,10 +41,10 @@ func (s *PipelineTrigger) KeepScanning(ctx context.Context, path string, period 
 }
 
 func (s *PipelineTrigger) processFiles(path string, files []string) {
-	if s.FoundFilesHandler == nil {
+	if s.Handler == nil {
 		fmt.Println("no func of process")
 		return
 	}
 
-	s.FoundFilesHandler.ProcessNewFilesInDir(path, files)
+	s.Handler.ProcessNewFilesInDir(path, files)
 }
