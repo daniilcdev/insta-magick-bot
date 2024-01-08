@@ -2,18 +2,21 @@ package imclient
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
+
+	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 )
 
 type IMProcessor struct {
 	outDir string
+	db     telegram.Storage
 }
 
-func NewProcessor(outDir string) *IMProcessor {
+func NewProcessor(outDir string, db telegram.Storage) *IMProcessor {
 	return &IMProcessor{
 		outDir: outDir,
+		db:     db,
 	}
 }
 
@@ -45,12 +48,21 @@ func (im *IMProcessor) Beautify(inDir string) {
 	}
 }
 
-func (im *IMProcessor) ProcessNewFilesInDir(path string, entries []fs.DirEntry) {
+func (im *IMProcessor) ProcessNewFilesInDir(path string) {
+	const batchSize = 10
+	pending := im.db.Schedule(batchSize)
+
+	if len(pending) == 0 {
+		return
+	}
+
 	im.Beautify(path)
 
-	for _, entry := range entries {
-		filename := entry.Name()
+	im.db.CompleteRequests(pending)
+
+	for _, filename := range pending {
 		pending := path + filename
 		os.Remove(pending)
 	}
+
 }

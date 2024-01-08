@@ -2,11 +2,11 @@ package adapters
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"sync"
 
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
+	"github.com/daniilcdev/insta-magick-bot/generated/queries"
 	"github.com/go-telegram/bot/models"
 )
 
@@ -16,19 +16,25 @@ type SendFileBackHandler struct {
 	Storage telegram.Storage
 }
 
-func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string, entries []fs.DirEntry) {
-	wg := sync.WaitGroup{}
-	for _, entry := range entries {
-		fileName := entry.Name()
+func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string) {
+	responses := sb.Storage.GetCompleted()
 
-		chatId, err := sb.Storage.GetRequester(fileName)
+	if len(responses) == 0 {
+		return
+	}
 
-		if err != nil {
-			sb.Log.Warn(fmt.Sprintf("chatId not found for file: %s", fileName))
-			continue
+	defer func(d string, f []queries.GetRequestsInStatusRow) {
+		sb.Storage.RemoveCompleted()
+
+		for _, r := range f {
+			os.Remove(d + r.File)
 		}
 
-		f, err := os.Open(dir + fileName)
+	}(dir, responses)
+
+	wg := sync.WaitGroup{}
+	for _, r := range responses {
+		f, err := os.Open(dir + r.File)
 		if err != nil {
 			sb.Log.Err(fmt.Sprintf("can't open file %v", err))
 			continue
@@ -36,13 +42,10 @@ func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string, entries []fs.Dir
 		defer f.Close()
 
 		wg.Add(1)
-		go sb.Client.SendPhoto(&wg, chatId, &models.InputFileUpload{
-			Filename: fileName,
+		go sb.Client.SendPhoto(&wg, r.RequesterID, &models.InputFileUpload{
+			Filename: r.File,
 			Data:     f,
 		})
-
-		sb.Storage.RemoveRequest(fileName)
-		os.Remove(dir + fileName)
 	}
 
 	wg.Wait()

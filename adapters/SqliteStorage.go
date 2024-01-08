@@ -15,6 +15,14 @@ type SqliteStorage struct {
 	q  *queries.Queries
 }
 
+type requestStatus string
+
+var (
+	Pending    requestStatus = "Pending"
+	InProgress requestStatus = "Processing"
+	Completed  requestStatus = "Completed"
+)
+
 func OpenStorageConnection() (*SqliteStorage, error) {
 	db, err := sql.Open(os.Getenv("DB_DRIVER"), os.Getenv("DB_CONN"))
 	if err != nil {
@@ -47,17 +55,39 @@ func (s *SqliteStorage) NewRequest(file, requesterId string) {
 	}
 }
 
-func (s *SqliteStorage) GetRequester(file string) (string, error) {
-	result, err := s.q.GetRequest(context.Background(), file)
+func (s *SqliteStorage) Schedule(limit int64) []string {
+	rows, err := s.q.SchedulePending(context.Background(), limit)
 	if err != nil {
-		return "", err
+		log.Printf("[ERROR] %v\n", err)
+		return nil
 	}
 
-	return result.RequesterID, nil
+	return rows
 }
 
-func (s *SqliteStorage) RemoveRequest(file string) {
-	err := s.q.DeleteRequest(context.Background(), file)
+func (s *SqliteStorage) GetCompleted() []queries.GetRequestsInStatusRow {
+	rows, err := s.q.GetRequestsInStatus(context.Background(), string(Completed))
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+		return nil
+	}
+
+	return rows
+}
+
+func (s *SqliteStorage) RemoveCompleted() {
+	err := s.q.DeleteRequestsInStatus(context.Background(), string(Completed))
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+	}
+}
+
+func (s *SqliteStorage) CompleteRequests(files []string) {
+	args := queries.UpdateRequestsStatusParams{
+		Filenames: files,
+		Status:    string(Completed),
+	}
+	err := s.q.UpdateRequestsStatus(context.Background(), args)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
 	}

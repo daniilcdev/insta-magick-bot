@@ -137,4 +137,6 @@ func (tc *TelegramClient) startHandler(ctx context.Context, bot *tg.Bot, update 
 		Text: `Отправьте изображение для обработки.
 		В силу текущих ограничений, пожалуйста, отправляйте по одному изображению за раз.`,
 	})
+
+	tc.log.Info(fmt.Sprintf("%d %s", update.Message.Chat.ID, "started"))
 }
