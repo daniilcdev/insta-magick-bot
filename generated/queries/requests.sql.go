@@ -7,11 +7,12 @@ package queries
 
 import (
 	"context"
+	"strings"
 )
 
 const createRequest = `-- name: CreateRequest :exec
-INSERT INTO requests (file, requester_id)
-VALUES (?, ?)
+INSERT INTO requests (file, requester_id, status)
+VALUES (?, ?, "Pending")
 `
 
 type CreateRequestParams struct {
@@ -35,13 +36,120 @@ func (q *Queries) DeleteRequest(ctx context.Context, file string) error {
 }
 
 const getRequest = `-- name: GetRequest :one
-SELECT id, file, requester_id FROM requests
-WHERE file = ? LIMIT 1
+SELECT id, file, requester_id, status
+FROM requests
+WHERE file = ?
+LIMIT 1
 `
 
 func (q *Queries) GetRequest(ctx context.Context, file string) (Request, error) {
 	row := q.db.QueryRowContext(ctx, getRequest, file)
 	var i Request
-	err := row.Scan(&i.ID, &i.File, &i.RequesterID)
+	err := row.Scan(
+		&i.ID,
+		&i.File,
+		&i.RequesterID,
+		&i.Status,
+	)
 	return i, err
+}
+
+const getRequestersByFilenames = `-- name: GetRequestersByFilenames :many
+SELECT file, requester_id
+FROM requests
+WHERE file in (/*SLICE:filenames*/?)
+`
+
+type GetRequestersByFilenamesRow struct {
+	File        string
+	RequesterID string
+}
+
+func (q *Queries) GetRequestersByFilenames(ctx context.Context, filenames []string) ([]GetRequestersByFilenamesRow, error) {
+	query := getRequestersByFilenames
+	var queryParams []interface{}
+	if len(filenames) > 0 {
+		for _, v := range filenames {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:filenames*/?", strings.Repeat(",?", len(filenames))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:filenames*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRequestersByFilenamesRow
+	for rows.Next() {
+		var i GetRequestersByFilenamesRow
+		if err := rows.Scan(&i.File, &i.RequesterID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const obtainPendingFiles = `-- name: ObtainPendingFiles :many
+UPDATE requests
+SET status = "Processing"
+WHERE id in (
+        SELECT id
+        FROM requests
+        WHERE status = "Pending"
+        LIMIT ?
+    )
+RETURNING file
+`
+
+func (q *Queries) ObtainPendingFiles(ctx context.Context, limit int64) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, obtainPendingFiles, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var file string
+		if err := rows.Scan(&file); err != nil {
+			return nil, err
+		}
+		items = append(items, file)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateFilesStatus = `-- name: UpdateFilesStatus :exec
+UPDATE requests
+SET status = "Processed"
+WHERE file in (/*SLICE:filenames*/?)
+`
+
+func (q *Queries) UpdateFilesStatus(ctx context.Context, filenames []string) error {
+	query := updateFilesStatus
+	var queryParams []interface{}
+	if len(filenames) > 0 {
+		for _, v := range filenames {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:filenames*/?", strings.Repeat(",?", len(filenames))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:filenames*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
 }

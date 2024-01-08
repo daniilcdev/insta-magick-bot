@@ -10,4 +10,5 @@ type Request struct {
 	ID          int64
 	File        string
 	RequesterID string
+	Status      string
 }
