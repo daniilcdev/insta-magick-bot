@@ -52,13 +52,17 @@ func (im *IMProcessor) ProcessNewFilesInDir(path string) {
 	const batchSize = 10
 	pending := im.db.Schedule(batchSize)
 
-	if len(pending) > 0 {
-		im.Beautify(path)
-		im.db.CompleteRequests(pending)
+	if len(pending) == 0 {
+		return
 	}
+
+	im.Beautify(path)
+
+	im.db.CompleteRequests(pending)
 
 	for _, filename := range pending {
 		pending := path + filename
 		os.Remove(pending)
 	}
+
 }

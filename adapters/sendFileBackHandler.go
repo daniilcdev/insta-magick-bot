@@ -19,7 +19,13 @@ type SendFileBackHandler struct {
 func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string) {
 	responses := sb.Storage.GetCompleted()
 
+	if len(responses) == 0 {
+		return
+	}
+
 	defer func(d string, f []queries.ObtainCompletedRow) {
+		sb.Storage.RemoveCompleted()
+
 		for _, r := range f {
 			os.Remove(d + r.File)
 		}
