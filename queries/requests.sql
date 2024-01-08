@@ -2,6 +2,7 @@
 INSERT INTO requests (file, requester_id)
 VALUES (?, ?);
 
+-- weird behaviour: naming parameter doesn't work wit sqlite for some reason
 -- name: SchedulePending :many
 UPDATE requests
 SET status = "Processing"
@@ -13,15 +14,15 @@ WHERE id in (
     )
 RETURNING file;
 
--- name: ObtainCompleted :many
+-- name: GetRequestsInStatus :many
 SELECT file, requester_id FROM requests
-WHERE status = "Processed";
+WHERE status = ?;
 
--- name: UpdateFilesStatus :exec
+-- name: UpdateRequestsStatus :exec
 UPDATE requests
-SET status = "Processed"
+SET status = ?
 WHERE file in (sqlc.slice('filenames'));
 
--- name: DeleteCompletedRequests :exec
+-- name: DeleteRequestsInStatus :exec
 DELETE FROM requests
-WHERE status = "Processed";
+WHERE status = ?;

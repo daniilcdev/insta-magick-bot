@@ -25,35 +25,35 @@ func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) er
 	return err
 }
 
-const deleteCompletedRequests = `-- name: DeleteCompletedRequests :exec
+const deleteRequestsInStatus = `-- name: DeleteRequestsInStatus :exec
 DELETE FROM requests
-WHERE status = "Processed"
+WHERE status = ?
 `
 
-func (q *Queries) DeleteCompletedRequests(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, deleteCompletedRequests)
+func (q *Queries) DeleteRequestsInStatus(ctx context.Context, status string) error {
+	_, err := q.db.ExecContext(ctx, deleteRequestsInStatus, status)
 	return err
 }
 
-const obtainCompleted = `-- name: ObtainCompleted :many
+const getRequestsInStatus = `-- name: GetRequestsInStatus :many
 SELECT file, requester_id FROM requests
-WHERE status = "Processed"
+WHERE status = ?
 `
 
-type ObtainCompletedRow struct {
+type GetRequestsInStatusRow struct {
 	File        string
 	RequesterID string
 }
 
-func (q *Queries) ObtainCompleted(ctx context.Context) ([]ObtainCompletedRow, error) {
-	rows, err := q.db.QueryContext(ctx, obtainCompleted)
+func (q *Queries) GetRequestsInStatus(ctx context.Context, status string) ([]GetRequestsInStatusRow, error) {
+	rows, err := q.db.QueryContext(ctx, getRequestsInStatus, status)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ObtainCompletedRow
+	var items []GetRequestsInStatusRow
 	for rows.Next() {
-		var i ObtainCompletedRow
+		var i GetRequestsInStatusRow
 		if err := rows.Scan(&i.File, &i.RequesterID); err != nil {
 			return nil, err
 		}
@@ -80,6 +80,7 @@ WHERE id in (
 RETURNING file
 `
 
+// weird behaviour: naming parameter doesn't work wit sqlite for some reason
 func (q *Queries) SchedulePending(ctx context.Context, limit int64) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, schedulePending, limit)
 	if err != nil {
@@ -103,20 +104,26 @@ func (q *Queries) SchedulePending(ctx context.Context, limit int64) ([]string, e
 	return items, nil
 }
 
-const updateFilesStatus = `-- name: UpdateFilesStatus :exec
+const updateRequestsStatus = `-- name: UpdateRequestsStatus :exec
 UPDATE requests
-SET status = "Processed"
+SET status = ?
 WHERE file in (/*SLICE:filenames*/?)
 `
 
-func (q *Queries) UpdateFilesStatus(ctx context.Context, filenames []string) error {
-	query := updateFilesStatus
+type UpdateRequestsStatusParams struct {
+	Status    string
+	Filenames []string
+}
+
+func (q *Queries) UpdateRequestsStatus(ctx context.Context, arg UpdateRequestsStatusParams) error {
+	query := updateRequestsStatus
 	var queryParams []interface{}
-	if len(filenames) > 0 {
-		for _, v := range filenames {
+	queryParams = append(queryParams, arg.Status)
+	if len(arg.Filenames) > 0 {
+		for _, v := range arg.Filenames {
 			queryParams = append(queryParams, v)
 		}
-		query = strings.Replace(query, "/*SLICE:filenames*/?", strings.Repeat(",?", len(filenames))[1:], 1)
+		query = strings.Replace(query, "/*SLICE:filenames*/?", strings.Repeat(",?", len(arg.Filenames))[1:], 1)
 	} else {
 		query = strings.Replace(query, "/*SLICE:filenames*/?", "NULL", 1)
 	}

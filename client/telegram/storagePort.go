@@ -6,7 +6,7 @@ type Storage interface {
 	NewRequest(file, requesterId string)
 
 	Schedule(limit int64) []string
-	GetCompleted() []queries.ObtainCompletedRow
+	GetCompleted() []queries.GetRequestsInStatusRow
 	RemoveCompleted()
 
 	CompleteRequests(files []string)

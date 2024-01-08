@@ -23,7 +23,7 @@ func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string) {
 		return
 	}
 
-	defer func(d string, f []queries.ObtainCompletedRow) {
+	defer func(d string, f []queries.GetRequestsInStatusRow) {
 		sb.Storage.RemoveCompleted()
 
 		for _, r := range f {
