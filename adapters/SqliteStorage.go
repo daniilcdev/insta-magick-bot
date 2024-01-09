@@ -41,6 +41,15 @@ func OpenStorageConnection() (*SqliteStorage, error) {
 	return &SqliteStorage{db: db, q: q}, nil
 }
 
+func (s *SqliteStorage) FilterNames() []string {
+	names, err := s.q.GetNames(context.Background())
+	if err != nil {
+		return []string{}
+	}
+
+	return names
+}
+
 func (s *SqliteStorage) NewRequest(file, requesterId string) {
 	err := s.q.CreateRequest(
 		context.Background(),

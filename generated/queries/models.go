@@ -6,6 +6,12 @@ package queries
 
 import ()
 
+type Filter struct {
+	ID      int64
+	Name    string
+	Receipt string
+}
+
 type Request struct {
 	ID          int64
 	File        string

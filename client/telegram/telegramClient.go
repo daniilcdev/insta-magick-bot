@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path"
-	"strings"
 	"sync"
 
 	tg "github.com/go-telegram/bot"
@@ -13,10 +11,11 @@ import (
 )
 
 type TelegramClient struct {
-	log       Logger
-	bot       *tg.Bot
-	imgLoader *imageWebLoader
-	ctx       context.Context
+	log         Logger
+	bot         *tg.Bot
+	imgLoader   *imageWebLoader
+	ctx         context.Context
+	filtersPool []string
 }
 
 func NewBotClient(ctx context.Context) *TelegramClient {
@@ -41,6 +40,7 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 	}
 
 	b.RegisterHandler(tg.HandlerTypeMessageText, "/start", tg.MatchTypeExact, tc.startHandler)
+	b.RegisterHandlerMatchFunc(tc.matchListFiltersCommand, tc.handleListFiltersCommand)
 	b.RegisterHandlerMatchFunc(tc.photoMessageMatch, tc.photoMessageHandler)
 
 	tc.bot = b
@@ -67,6 +67,11 @@ func (tc *TelegramClient) Start() {
 	tc.bot.Start(tc.ctx)
 }
 
+func (tc *TelegramClient) WithFiltersPool(pool []string) *TelegramClient {
+	tc.filtersPool = pool
+	return tc
+}
+
 func (tc *TelegramClient) SendPhoto(wg *sync.WaitGroup, chatId any, inputFile models.InputFile) {
 	defer wg.Done()
 
@@ -83,60 +88,10 @@ func (tc *TelegramClient) SendPhoto(wg *sync.WaitGroup, chatId any, inputFile mo
 	}
 }
 
-func (tc *TelegramClient) photoMessageMatch(update *models.Update) bool {
-	switch {
-	case update.Message.Document != nil && strings.HasPrefix(update.Message.Document.MimeType, "image"):
-		return true
-	case len(update.Message.Photo) > 0:
-		return true
-	default:
-		return false
-	}
-}
-
-func (tc *TelegramClient) photoMessageHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
-	fileId, err := getFileId(update.Message)
-	if err != nil {
-		tc.log.Err(err.Error())
-		return
-	}
-
-	go bot.SendMessage(ctx,
-		&tg.SendMessageParams{
-			ChatID: update.Message.Chat.ID,
-			Text:   "Result will be sent back shortly...",
-		},
-	)
-
-	params := tg.GetFileParams{}
-	params.FileID = fileId
-	file, err := bot.GetFile(ctx, &params)
-	if err != nil {
-		bot.SendMessage(ctx, &tg.SendMessageParams{
-			ChatID: update.Message.Chat.ID,
-			Text:   "Failed to request image file: " + err.Error(),
-		},
-		)
-		return
-	}
-
-	dlLink := bot.FileDownloadLink(file)
-	dlParams := downloadParams{
-		url:         dlLink,
-		outFilename: file.FileID + path.Ext(dlLink),
-		outDir:      "./res/pending/",
-		requesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
-	}
-
-	go tc.imgLoader.downloadPhoto(dlParams)
-}
-
 func (tc *TelegramClient) startHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	bot.SendMessage(ctx, &tg.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text: `Отправьте изображение для обработки.
 		В силу текущих ограничений, пожалуйста, отправляйте по одному изображению за раз.`,
 	})
-
-	tc.log.Info(fmt.Sprintf("%d %s", update.Message.Chat.ID, "started"))
 }

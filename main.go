@@ -32,6 +32,7 @@ func main() {
 
 	botClient := telegram.NewBotClient(ctx).
 		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
+		WithFiltersPool(db.FilterNames()).
 		WithLogger(&adapters.DefaultLoggerAdapter{}).
 		WithStorage(db)
 
