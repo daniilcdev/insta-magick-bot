@@ -5,12 +5,14 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/daniilcdev/insta-magick-bot/client/imClient/ports"
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 )
 
 type IMProcessor struct {
-	outDir string
-	db     telegram.Storage
+	outDir            string
+	db                telegram.Storage
+	completionHandler ports.CompletionHandler
 }
 
 func NewProcessor(outDir string, db telegram.Storage) *IMProcessor {
@@ -18,6 +20,11 @@ func NewProcessor(outDir string, db telegram.Storage) *IMProcessor {
 		outDir: outDir,
 		db:     db,
 	}
+}
+
+func (imc *IMProcessor) WithCompletionHandler(handler ports.CompletionHandler) *IMProcessor {
+	imc.completionHandler = handler
+	return imc
 }
 
 // V1: mogrify -adaptive-sharpen 10% -separate -contrast-stretch 0.5%x0.5% -combine -enhance -auto-level -path %im.outDir %inDir/*.jpg
@@ -65,4 +72,5 @@ func (im *IMProcessor) ProcessNewFilesInDir(path string) {
 		os.Remove(pending)
 	}
 
+	im.completionHandler.OnProcessCompleted(path)
 }

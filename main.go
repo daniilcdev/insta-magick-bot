@@ -30,25 +30,28 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	scanner_receive := workers.PipelineTrigger{}
-	scanner_receive.Handler = imclient.NewProcessor(os.Getenv("IM_OUT_DIR"), db)
-	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 30*time.Second)
+	botClient := telegram.NewBotClient(ctx).
+		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
+		WithLogger(&adapters.DefaultLoggerAdapter{}).
+		WithStorage(db)
 
-	botClient := telegram.NewBotClient(ctx)
-
-	scanner_sendback := workers.PipelineTrigger{}
-	scanner_sendback.Handler = &adapters.SendFileBackHandler{
+	sendBackAdapter := &adapters.SendFileBackHandler{
 		Log:     &adapters.DefaultLoggerAdapter{},
 		Client:  botClient,
 		Storage: db,
 	}
-	go scanner_sendback.KeepScanning(ctx, os.Getenv("IM_OUT_DIR"), 20*time.Second)
+	go botClient.Start()
 
-	go botClient.
-		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
-		WithLogger(&adapters.DefaultLoggerAdapter{}).
-		WithStorage(db).
-		Start()
+	// clean up 'stale' completed images
+	sendBackAdapter.OnProcessCompleted(os.Getenv("IM_OUT_DIR"))
+
+	imc := imclient.NewProcessor(os.Getenv("IM_OUT_DIR"), db).
+		WithCompletionHandler(sendBackAdapter)
+
+	scanner_receive := workers.PipelineTrigger{
+		Handler: imc,
+	}
+	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 30*time.Second)
 
 	waitForExit()
 }
