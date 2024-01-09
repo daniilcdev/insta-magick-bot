@@ -35,6 +35,12 @@ func (tc *TelegramClient) photoMessageHandler(ctx context.Context, bot *tg.Bot, 
 		},
 	)
 
+	cmd := update.Message.Caption
+
+	if strings.HasPrefix(cmd, "/filter ") {
+		cmd = strings.TrimSpace(strings.TrimPrefix(cmd, "/filter"))
+	}
+
 	params := tg.GetFileParams{}
 	params.FileID = fileId
 	file, err := bot.GetFile(ctx, &params)
@@ -53,6 +59,7 @@ func (tc *TelegramClient) photoMessageHandler(ctx context.Context, bot *tg.Bot, 
 		outFilename: file.FileID + path.Ext(dlLink),
 		outDir:      "./res/pending/",
 		requesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
+		filter:      cmd,
 	}
 
 	go tc.imgLoader.downloadPhoto(dlParams)

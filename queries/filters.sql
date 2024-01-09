@@ -2,7 +2,7 @@
 SELECT name FROM filters;
 
 -- name: GetReceipt :one
-SELECT receipt FROM filters
+SELECT id, name, receipt FROM filters
 WHERE name = ?;
 
 -- name: CreateReceipt :exec

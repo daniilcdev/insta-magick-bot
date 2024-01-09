@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ type downloadParams struct {
 	outFilename string
 	outDir      string
 	requesterId string
+	filter      string
 }
 
 func (iwl *imageWebLoader) downloadPhoto(params downloadParams) error {
@@ -40,7 +42,23 @@ func (iwl *imageWebLoader) downloadPhoto(params downloadParams) error {
 		return err
 	}
 
-	iwl.storage.NewRequest(params.outFilename, params.requesterId)
+	if params.filter == "" {
+		params.filter = "Bright Summer"
+	}
+
+	filter, err := iwl.storage.FindFilter(params.filter)
+
+	if err != nil {
+		fmt.Println("filter not found")
+		os.Remove(params.outDir + params.outFilename)
+		return err
+	}
+
+	iwl.storage.CreateRequest(&NewRequest{
+		File:        params.outFilename,
+		RequesterId: params.requesterId,
+		Filter:      filter.Name,
+	})
 
 	return nil
 }

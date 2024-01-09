@@ -17,4 +17,5 @@ type Request struct {
 	File        string
 	RequesterID string
 	Status      string
+	FilterName  string
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	"github.com/daniilcdev/insta-magick-bot/generated/queries"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -50,12 +51,13 @@ func (s *SqliteStorage) FilterNames() []string {
 	return names
 }
 
-func (s *SqliteStorage) NewRequest(file, requesterId string) {
+func (s *SqliteStorage) CreateRequest(newRequest *telegram.NewRequest) {
 	err := s.q.CreateRequest(
 		context.Background(),
 		queries.CreateRequestParams{
-			File:        file,
-			RequesterID: requesterId,
+			File:        newRequest.File,
+			RequesterID: newRequest.RequesterId,
+			FilterName:  newRequest.Filter,
 		},
 	)
 
@@ -64,7 +66,7 @@ func (s *SqliteStorage) NewRequest(file, requesterId string) {
 	}
 }
 
-func (s *SqliteStorage) Schedule(limit int64) []string {
+func (s *SqliteStorage) Schedule(limit int64) []queries.SchedulePendingRow {
 	rows, err := s.q.SchedulePending(context.Background(), limit)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
@@ -100,6 +102,16 @@ func (s *SqliteStorage) CompleteRequests(files []string) {
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
 	}
+}
+
+func (s *SqliteStorage) FindFilter(name string) (filter queries.Filter, err error) {
+	filter, err = s.q.GetReceipt(context.Background(), name)
+
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+	}
+
+	return filter, err
 }
 
 func (s *SqliteStorage) Close() error {

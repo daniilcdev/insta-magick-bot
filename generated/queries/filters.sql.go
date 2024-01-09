@@ -52,13 +52,13 @@ func (q *Queries) GetNames(ctx context.Context) ([]string, error) {
 }
 
 const getReceipt = `-- name: GetReceipt :one
-SELECT receipt FROM filters
+SELECT id, name, receipt FROM filters
 WHERE name = ?
 `
 
-func (q *Queries) GetReceipt(ctx context.Context, name string) (string, error) {
+func (q *Queries) GetReceipt(ctx context.Context, name string) (Filter, error) {
 	row := q.db.QueryRowContext(ctx, getReceipt, name)
-	var receipt string
-	err := row.Scan(&receipt)
-	return receipt, err
+	var i Filter
+	err := row.Scan(&i.ID, &i.Name, &i.Receipt)
+	return i, err
 }

@@ -2,12 +2,20 @@ package telegram
 
 import "github.com/daniilcdev/insta-magick-bot/generated/queries"
 
-type Storage interface {
-	NewRequest(file, requesterId string)
+type NewRequest struct {
+	File        string
+	RequesterId string
+	Filter      string
+}
 
-	Schedule(limit int64) []string
+type Storage interface {
+	CreateRequest(newRequest *NewRequest)
+
+	Schedule(limit int64) []queries.SchedulePendingRow
 	GetCompleted() []queries.GetRequestsInStatusRow
 	RemoveCompleted()
 
 	CompleteRequests(files []string)
+
+	FindFilter(name string) (filter queries.Filter, err error)
 }
