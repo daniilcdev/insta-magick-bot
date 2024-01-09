@@ -72,5 +72,5 @@ func (im *IMProcessor) ProcessNewFilesInDir(path string) {
 		os.Remove(pending)
 	}
 
-	im.completionHandler.OnProcessCompleted(path)
+	im.completionHandler.OnProcessCompleted(im.outDir)
 }
