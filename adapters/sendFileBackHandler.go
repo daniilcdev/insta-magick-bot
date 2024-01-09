@@ -16,7 +16,7 @@ type SendFileBackHandler struct {
 	Storage telegram.Storage
 }
 
-func (sb *SendFileBackHandler) ProcessNewFilesInDir(dir string) {
+func (sb *SendFileBackHandler) OnProcessCompleted(dir string) {
 	responses := sb.Storage.GetCompleted()
 
 	if len(responses) == 0 {
