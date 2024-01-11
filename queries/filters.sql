@@ -1,10 +1,35 @@
 -- name: GetNames :many
-SELECT name FROM filters;
+SELECT
+    name
+FROM
+    filters;
 
--- name: GetReceiptOrDefault :one
-SELECT id, name, receipt FROM filters
-WHERE name = ?;
+-- name: GetReceiptWithName :one
+SELECT
+    id,
+    name,
+    receipt
+FROM
+    filters
+WHERE
+    name = ?
+LIMIT
+    1;
+
+-- name: GetDefaultReceipt :one
+SELECT
+    id,
+    name,
+    receipt
+FROM
+    filters
+WHERE
+    id = 1
+LIMIT
+    1;
 
 -- name: CreateReceipt :exec
-INSERT INTO filters (name, receipt)
-VALUES (?, ?);
+INSERT INTO
+    filters (name, receipt)
+VALUES
+    (?, ?);

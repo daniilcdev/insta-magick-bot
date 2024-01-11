@@ -10,8 +10,10 @@ import (
 )
 
 const createReceipt = `-- name: CreateReceipt :exec
-INSERT INTO filters (name, receipt)
-VALUES (?, ?)
+INSERT INTO
+    filters (name, receipt)
+VALUES
+    (?, ?)
 `
 
 type CreateReceiptParams struct {
@@ -24,8 +26,31 @@ func (q *Queries) CreateReceipt(ctx context.Context, arg CreateReceiptParams) er
 	return err
 }
 
+const getDefaultReceipt = `-- name: GetDefaultReceipt :one
+SELECT
+    id,
+    name,
+    receipt
+FROM
+    filters
+WHERE
+    id = 1
+LIMIT
+    1
+`
+
+func (q *Queries) GetDefaultReceipt(ctx context.Context) (Filter, error) {
+	row := q.db.QueryRowContext(ctx, getDefaultReceipt)
+	var i Filter
+	err := row.Scan(&i.ID, &i.Name, &i.Receipt)
+	return i, err
+}
+
 const getNames = `-- name: GetNames :many
-SELECT name FROM filters
+SELECT
+    name
+FROM
+    filters
 `
 
 func (q *Queries) GetNames(ctx context.Context) ([]string, error) {
@@ -51,13 +76,21 @@ func (q *Queries) GetNames(ctx context.Context) ([]string, error) {
 	return items, nil
 }
 
-const getReceiptOrDefault = `-- name: GetReceiptOrDefault :one
-SELECT id, name, receipt FROM filters
-WHERE name = ? OR id = 1
+const getReceiptWithName = `-- name: GetReceiptWithName :one
+SELECT
+    id,
+    name,
+    receipt
+FROM
+    filters
+WHERE
+    name = ?
+LIMIT
+    1
 `
 
-func (q *Queries) GetReceiptOrDefault(ctx context.Context, name string) (Filter, error) {
-	row := q.db.QueryRowContext(ctx, getReceiptOrDefault, name)
+func (q *Queries) GetReceiptWithName(ctx context.Context, name string) (Filter, error) {
+	row := q.db.QueryRowContext(ctx, getReceiptWithName, name)
 	var i Filter
 	err := row.Scan(&i.ID, &i.Name, &i.Receipt)
 	return i, err

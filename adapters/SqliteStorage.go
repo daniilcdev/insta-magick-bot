@@ -101,8 +101,12 @@ func (s *SqliteStorage) CompleteRequests(files []string) {
 }
 
 func (s *SqliteStorage) FindFilter(name string) (filter queries.Filter, err error) {
-	filter, err = s.q.GetReceiptOrDefault(context.Background(), name)
+	filter, err = s.q.GetReceiptWithName(context.Background(), name)
 	reportErr(err)
+	if err != nil {
+		filter, err = s.q.GetDefaultReceipt(context.Background())
+	}
+
 	return filter, err
 }
 
