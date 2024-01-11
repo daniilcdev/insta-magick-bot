@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	"github.com/daniilcdev/insta-magick-bot/generated/queries"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -41,21 +42,29 @@ func OpenStorageConnection() (*SqliteStorage, error) {
 	return &SqliteStorage{db: db, q: q}, nil
 }
 
-func (s *SqliteStorage) NewRequest(file, requesterId string) {
+func (s *SqliteStorage) FilterNames() []string {
+	names, err := s.q.GetNames(context.Background())
+	if err != nil {
+		return []string{}
+	}
+
+	return names
+}
+
+func (s *SqliteStorage) CreateRequest(newRequest *telegram.NewRequest) {
 	err := s.q.CreateRequest(
 		context.Background(),
 		queries.CreateRequestParams{
-			File:        file,
-			RequesterID: requesterId,
+			File:        newRequest.File,
+			RequesterID: newRequest.RequesterId,
+			FilterName:  newRequest.Filter,
 		},
 	)
 
-	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
-	}
+	reportErr(err)
 }
 
-func (s *SqliteStorage) Schedule(limit int64) []string {
+func (s *SqliteStorage) Schedule(limit int64) []queries.SchedulePendingRow {
 	rows, err := s.q.SchedulePending(context.Background(), limit)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
@@ -77,9 +86,8 @@ func (s *SqliteStorage) GetCompleted() []queries.GetRequestsInStatusRow {
 
 func (s *SqliteStorage) RemoveCompleted() {
 	err := s.q.DeleteRequestsInStatus(context.Background(), string(Completed))
-	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
-	}
+	reportErr(err)
+
 }
 
 func (s *SqliteStorage) CompleteRequests(files []string) {
@@ -88,9 +96,22 @@ func (s *SqliteStorage) CompleteRequests(files []string) {
 		Status:    string(Completed),
 	}
 	err := s.q.UpdateRequestsStatus(context.Background(), args)
-	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
-	}
+	reportErr(err)
+
+}
+
+func (s *SqliteStorage) FindFilter(name string) (filter queries.Filter, err error) {
+	filter, err = s.q.GetReceiptOrDefault(context.Background(), name)
+	reportErr(err)
+	return filter, err
+}
+
+func (s *SqliteStorage) Rollback(files []string) {
+	err := s.q.UpdateRequestsStatus(context.Background(), queries.UpdateRequestsStatusParams{
+		Filenames: files,
+		Status:    string(Pending),
+	})
+	reportErr(err)
 }
 
 func (s *SqliteStorage) Close() error {
@@ -99,4 +120,10 @@ func (s *SqliteStorage) Close() error {
 	}()
 
 	return s.db.Close()
+}
+
+func reportErr(err error) {
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+	}
 }

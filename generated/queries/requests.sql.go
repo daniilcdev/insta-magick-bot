@@ -11,17 +11,18 @@ import (
 )
 
 const createRequest = `-- name: CreateRequest :exec
-INSERT INTO requests (file, requester_id)
-VALUES (?, ?)
+INSERT INTO requests (file, requester_id, filter_name)
+VALUES (?, ?, ?)
 `
 
 type CreateRequestParams struct {
 	File        string
 	RequesterID string
+	FilterName  string
 }
 
 func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) error {
-	_, err := q.db.ExecContext(ctx, createRequest, arg.File, arg.RequesterID)
+	_, err := q.db.ExecContext(ctx, createRequest, arg.File, arg.RequesterID, arg.FilterName)
 	return err
 }
 
@@ -77,23 +78,28 @@ WHERE id in (
         WHERE status = "Pending"
         LIMIT ?
     )
-RETURNING file
+RETURNING file, filter_name
 `
 
+type SchedulePendingRow struct {
+	File       string
+	FilterName string
+}
+
 // weird behaviour: naming parameter doesn't work wit sqlite for some reason
-func (q *Queries) SchedulePending(ctx context.Context, limit int64) ([]string, error) {
+func (q *Queries) SchedulePending(ctx context.Context, limit int64) ([]SchedulePendingRow, error) {
 	rows, err := q.db.QueryContext(ctx, schedulePending, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []string
+	var items []SchedulePendingRow
 	for rows.Next() {
-		var file string
-		if err := rows.Scan(&file); err != nil {
+		var i SchedulePendingRow
+		if err := rows.Scan(&i.File, &i.FilterName); err != nil {
 			return nil, err
 		}
-		items = append(items, file)
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

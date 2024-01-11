@@ -1,7 +1,6 @@
 package adapters
 
 import (
-	"fmt"
 	"os"
 	"sync"
 
@@ -36,7 +35,7 @@ func (sb *SendFileBackHandler) OnProcessCompleted(dir string) {
 	for _, r := range responses {
 		f, err := os.Open(dir + r.File)
 		if err != nil {
-			sb.Log.Err(fmt.Sprintf("can't open file %v", err))
+			sb.Log.Err(err.Error())
 			continue
 		}
 		defer f.Close()

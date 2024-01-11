@@ -16,6 +16,7 @@ type downloadParams struct {
 	outFilename string
 	outDir      string
 	requesterId string
+	filter      string
 }
 
 func (iwl *imageWebLoader) downloadPhoto(params downloadParams) error {
@@ -40,7 +41,11 @@ func (iwl *imageWebLoader) downloadPhoto(params downloadParams) error {
 		return err
 	}
 
-	iwl.storage.NewRequest(params.outFilename, params.requesterId)
+	iwl.storage.CreateRequest(&NewRequest{
+		File:        params.outFilename,
+		RequesterId: params.requesterId,
+		Filter:      params.filter,
+	})
 
 	return nil
 }

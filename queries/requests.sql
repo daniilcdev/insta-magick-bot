@@ -1,6 +1,6 @@
 -- name: CreateRequest :exec
-INSERT INTO requests (file, requester_id)
-VALUES (?, ?);
+INSERT INTO requests (file, requester_id, filter_name)
+VALUES (?, ?, ?);
 
 -- weird behaviour: naming parameter doesn't work wit sqlite for some reason
 -- name: SchedulePending :many
@@ -12,7 +12,7 @@ WHERE id in (
         WHERE status = "Pending"
         LIMIT ?
     )
-RETURNING file;
+RETURNING file, filter_name;
 
 -- name: GetRequestsInStatus :many
 SELECT file, requester_id FROM requests
