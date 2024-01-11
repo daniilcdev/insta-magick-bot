@@ -33,11 +33,11 @@ func main() {
 	botClient := telegram.NewBotClient(ctx).
 		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
 		WithFiltersPool(db.FilterNames()).
-		WithLogger(&adapters.DefaultLoggerAdapter{}).
+		WithLogger(adapters.NewLogger().WithTag("BotClient")).
 		WithStorage(db)
 
 	sendBackAdapter := &adapters.SendFileBackHandler{
-		Log:     &adapters.DefaultLoggerAdapter{},
+		Log:     adapters.NewLogger().WithTag("SendbackAdapter"),
 		Client:  botClient,
 		Storage: db,
 	}
