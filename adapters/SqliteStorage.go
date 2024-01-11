@@ -61,9 +61,7 @@ func (s *SqliteStorage) CreateRequest(newRequest *telegram.NewRequest) {
 		},
 	)
 
-	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
-	}
+	reportErr(err)
 }
 
 func (s *SqliteStorage) Schedule(limit int64) []queries.SchedulePendingRow {
@@ -88,9 +86,8 @@ func (s *SqliteStorage) GetCompleted() []queries.GetRequestsInStatusRow {
 
 func (s *SqliteStorage) RemoveCompleted() {
 	err := s.q.DeleteRequestsInStatus(context.Background(), string(Completed))
-	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
-	}
+	reportErr(err)
+
 }
 
 func (s *SqliteStorage) CompleteRequests(files []string) {
@@ -99,19 +96,22 @@ func (s *SqliteStorage) CompleteRequests(files []string) {
 		Status:    string(Completed),
 	}
 	err := s.q.UpdateRequestsStatus(context.Background(), args)
-	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
-	}
+	reportErr(err)
+
 }
 
 func (s *SqliteStorage) FindFilter(name string) (filter queries.Filter, err error) {
-	filter, err = s.q.GetReceipt(context.Background(), name)
-
-	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
-	}
-
+	filter, err = s.q.GetReceiptOrDefault(context.Background(), name)
+	reportErr(err)
 	return filter, err
+}
+
+func (s *SqliteStorage) Rollback(files []string) {
+	err := s.q.UpdateRequestsStatus(context.Background(), queries.UpdateRequestsStatusParams{
+		Filenames: files,
+		Status:    string(Pending),
+	})
+	reportErr(err)
 }
 
 func (s *SqliteStorage) Close() error {
@@ -120,4 +120,10 @@ func (s *SqliteStorage) Close() error {
 	}()
 
 	return s.db.Close()
+}
+
+func reportErr(err error) {
+	if err != nil {
+		log.Printf("[ERROR] %v\n", err)
+	}
 }

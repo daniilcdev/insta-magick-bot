@@ -12,6 +12,8 @@ type Storage interface {
 	CreateRequest(newRequest *NewRequest)
 
 	Schedule(limit int64) []queries.SchedulePendingRow
+	Rollback(files []string)
+
 	GetCompleted() []queries.GetRequestsInStatusRow
 	RemoveCompleted()
 

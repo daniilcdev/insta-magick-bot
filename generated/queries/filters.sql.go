@@ -51,13 +51,13 @@ func (q *Queries) GetNames(ctx context.Context) ([]string, error) {
 	return items, nil
 }
 
-const getReceipt = `-- name: GetReceipt :one
+const getReceiptOrDefault = `-- name: GetReceiptOrDefault :one
 SELECT id, name, receipt FROM filters
-WHERE name = ?
+WHERE name = ? OR id = 1
 `
 
-func (q *Queries) GetReceipt(ctx context.Context, name string) (Filter, error) {
-	row := q.db.QueryRowContext(ctx, getReceipt, name)
+func (q *Queries) GetReceiptOrDefault(ctx context.Context, name string) (Filter, error) {
+	row := q.db.QueryRowContext(ctx, getReceiptOrDefault, name)
 	var i Filter
 	err := row.Scan(&i.ID, &i.Name, &i.Receipt)
 	return i, err
