@@ -24,7 +24,7 @@ func (tc *TelegramClient) photoMessageMatch(update *models.Update) bool {
 func (tc *TelegramClient) photoMessageHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	fileId, err := getFileId(update.Message)
 	if err != nil {
-		tc.log.Err(err.Error())
+		tc.log.Err(err)
 		return
 	}
 
@@ -57,7 +57,7 @@ func (tc *TelegramClient) photoMessageHandler(ctx context.Context, bot *tg.Bot, 
 	dlParams := downloadParams{
 		url:         dlLink,
 		outFilename: file.FileID + path.Ext(dlLink),
-		outDir:      "./res/pending/",
+		outDir:      tc.cfg.DownloadDir(),
 		requesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
 		filter:      cmd,
 	}

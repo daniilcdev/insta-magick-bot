@@ -16,15 +16,16 @@ type TelegramClient struct {
 	imgLoader   *imageWebLoader
 	ctx         context.Context
 	filtersPool []string
+	cfg         BotConfig
 }
 
-func NewBotClient(ctx context.Context) *TelegramClient {
+func NewBotClient(ctx context.Context, cfg BotConfig) *TelegramClient {
 	tgc := TelegramClient{
-		log: nil,
+		log: &nopLoggerAdapter{},
+		cfg: cfg,
 	}
 
 	tgc.ctx = ctx
-	tgc.log = &nopLoggerAdapter{}
 	tgc.imgLoader = &imageWebLoader{}
 	return &tgc
 }
@@ -38,10 +39,6 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 	if err != nil {
 		return tc
 	}
-
-	b.RegisterHandler(tg.HandlerTypeMessageText, "/start", tg.MatchTypeExact, tc.startHandler)
-	b.RegisterHandlerMatchFunc(tc.matchListFiltersCommand, tc.handleListFiltersCommand)
-	b.RegisterHandlerMatchFunc(tc.photoMessageMatch, tc.photoMessageHandler)
 
 	tc.bot = b
 
@@ -63,6 +60,10 @@ func (tc *TelegramClient) Start() {
 		panic("can't start client - bot wasn't set")
 	}
 
+	tc.bot.RegisterHandler(tg.HandlerTypeMessageText, "/start", tg.MatchTypeExact, tc.startHandler)
+	tc.bot.RegisterHandlerMatchFunc(tc.matchListFiltersCommand, tc.handleListFiltersCommand)
+	tc.bot.RegisterHandlerMatchFunc(tc.photoMessageMatch, tc.photoMessageHandler)
+
 	tc.log.Info("Bot started")
 	tc.bot.Start(tc.ctx)
 }
@@ -83,7 +84,7 @@ func (tc *TelegramClient) SendPhoto(wg *sync.WaitGroup, chatId any, inputFile mo
 	_, err := tc.bot.SendPhoto(tc.ctx, params)
 
 	if err != nil {
-		tc.log.Err(fmt.Sprintf("failed to send image back %v", err))
+		tc.log.ErrStr(fmt.Sprintf("failed to send image back %v", err))
 		return
 	}
 }

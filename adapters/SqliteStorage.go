@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"os"
 
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
+	"github.com/daniilcdev/insta-magick-bot/config"
 	"github.com/daniilcdev/insta-magick-bot/generated/queries"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -24,8 +24,8 @@ var (
 	Completed  requestStatus = "Completed"
 )
 
-func OpenStorageConnection() (*SqliteStorage, error) {
-	db, err := sql.Open(os.Getenv("DB_DRIVER"), os.Getenv("DB_CONN"))
+func OpenStorageConnection(cfg *config.AppConfig) (*SqliteStorage, error) {
+	db, err := sql.Open(cfg.DbDriver(), cfg.DbConn())
 	if err != nil {
 		return nil, err
 	}

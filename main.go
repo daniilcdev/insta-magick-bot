@@ -10,18 +10,14 @@ import (
 	"github.com/daniilcdev/insta-magick-bot/adapters"
 	imclient "github.com/daniilcdev/insta-magick-bot/client/imClient"
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
+	"github.com/daniilcdev/insta-magick-bot/config"
 	"github.com/daniilcdev/insta-magick-bot/workers"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	godotenv.Load(
-		"./env/private/telegram.env",
-		"./env/private/db.env",
-		"./env/imagemagick.env",
-	)
+	cfg := config.LoadConfig()
 
-	db, err := adapters.OpenStorageConnection()
+	db, err := adapters.OpenStorageConnection(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,8 +26,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	botClient := telegram.NewBotClient(ctx).
-		WithToken(os.Getenv("TELEGRAM_BOT_TOKEN")).
+	botClient := telegram.NewBotClient(ctx, cfg).
+		WithToken(cfg.BotToken()).
 		WithFiltersPool(db.FilterNames()).
 		WithLogger(adapters.NewLogger().WithTag("BotClient")).
 		WithStorage(db)
@@ -44,15 +40,15 @@ func main() {
 	go botClient.Start()
 
 	// clean up 'stale' completed images
-	sendBackAdapter.OnProcessCompleted(os.Getenv("IM_OUT_DIR"))
+	sendBackAdapter.OnProcessCompleted(cfg.OutDir())
 
-	imc := imclient.NewProcessor(os.Getenv("IM_OUT_DIR"), db).
+	imc := imclient.NewProcessor(cfg, db).
 		WithCompletionHandler(sendBackAdapter)
 
 	scanner_receive := workers.PipelineTrigger{
 		Handler: imc,
 	}
-	go scanner_receive.KeepScanning(ctx, os.Getenv("IM_IN_DIR"), 30*time.Second)
+	go scanner_receive.KeepScanning(ctx, cfg.OutDir(), 30*time.Second)
 
 	waitForExit()
 }
