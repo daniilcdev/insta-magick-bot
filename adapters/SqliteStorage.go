@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
@@ -101,13 +102,16 @@ func (s *SqliteStorage) CompleteRequests(files []string) {
 }
 
 func (s *SqliteStorage) FindFilter(name string) (filter queries.Filter, err error) {
-	filter, err = s.q.GetReceiptWithName(context.Background(), name)
-	reportErr(err)
-	if err != nil {
-		filter, err = s.q.GetDefaultReceipt(context.Background())
+	switch name {
+	case "":
+		err = errors.New("filter name is empty")
+		reportErr(err)
+		return queries.Filter{}, err
+	default:
+		filter, err = s.q.GetReceiptWithName(context.Background(), name)
+		reportErr(err)
+		return filter, err
 	}
-
-	return filter, err
 }
 
 func (s *SqliteStorage) Rollback(files []string) {

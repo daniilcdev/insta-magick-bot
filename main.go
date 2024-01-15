@@ -48,7 +48,7 @@ func main() {
 	scanner_receive := workers.PipelineTrigger{
 		Handler: imc,
 	}
-	go scanner_receive.KeepScanning(ctx, cfg.OutDir(), 30*time.Second)
+	go scanner_receive.KeepScanning(ctx, cfg.InDir(), 30*time.Second)
 
 	waitForExit()
 }
