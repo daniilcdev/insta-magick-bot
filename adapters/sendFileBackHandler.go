@@ -35,7 +35,7 @@ func (sb *SendFileBackHandler) OnProcessCompleted(dir string) {
 	for _, r := range responses {
 		f, err := os.Open(dir + r.File)
 		if err != nil {
-			sb.Log.Err(err.Error())
+			sb.Log.Err(err)
 			continue
 		}
 		defer f.Close()

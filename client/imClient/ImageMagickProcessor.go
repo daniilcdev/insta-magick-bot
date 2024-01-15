@@ -12,14 +12,16 @@ import (
 
 type IMProcessor struct {
 	outDir            string
+	workingDir        string
 	db                telegram.Storage
 	completionHandler ports.CompletionHandler
 }
 
-func NewProcessor(outDir string, db telegram.Storage) *IMProcessor {
+func NewProcessor(cfg IMConfig, db telegram.Storage) *IMProcessor {
 	return &IMProcessor{
-		outDir: outDir,
-		db:     db,
+		outDir:     cfg.OutDir(),
+		workingDir: "./res/tmp",
+		db:         db,
 	}
 }
 
@@ -27,9 +29,6 @@ func (imc *IMProcessor) WithCompletionHandler(handler ports.CompletionHandler) *
 	imc.completionHandler = handler
 	return imc
 }
-
-// V1: mogrify -adaptive-sharpen 10% -separate -contrast-stretch 0.5%x0.5% -combine -enhance -auto-level -path %im.outDir %inDir/*.jpg
-// V2: mogrify -adaptive-sharpen 10% -channel B -evaluate add 1.31 -channel G -evaluate add 1.37 +channel -modulate 120,142 -contrast-stretch -13%x-17% -enhance -path ../out *.jpg
 
 func (im *IMProcessor) Beautify(inDir string, filterName string, files []string) error {
 	filter, err := im.db.FindFilter(filterName)
@@ -41,17 +40,15 @@ func (im *IMProcessor) Beautify(inDir string, filterName string, files []string)
 
 	log.Printf("[IMProcessor] processing files with filter %s\n", filter.Name)
 
-	const cwd = "./res/tmp/"
-
 	for _, file := range files {
-		err := os.Rename(inDir+file, cwd+file)
+		err := os.Rename(inDir+file, im.workingDir+file)
 		if err != nil {
 			log.Printf("unable to move file %s, %v", file, err)
 		}
 	}
 
 	args := strings.Split(filter.Receipt, " ")
-	args = append(args, "-path", im.outDir, cwd+"*.jpg")
+	args = append(args, "-path", im.outDir, im.workingDir+"*.jpg")
 	cmd := exec.Command("mogrify", args...)
 	_, err = cmd.Output()
 
@@ -61,7 +58,7 @@ func (im *IMProcessor) Beautify(inDir string, filterName string, files []string)
 	case nil:
 		var misses int = 0
 		for _, file := range files {
-			err := os.Remove(cwd + file)
+			err := os.Remove(im.workingDir + file)
 			if err != nil {
 				misses++
 			}

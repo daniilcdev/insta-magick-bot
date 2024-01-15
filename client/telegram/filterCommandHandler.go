@@ -26,6 +26,6 @@ func (tc *TelegramClient) handleListFiltersCommand(ctx context.Context, bot *tg.
 	})
 
 	if err != nil {
-		tc.log.Err(err.Error())
+		tc.log.Err(err)
 	}
 }
