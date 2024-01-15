@@ -20,7 +20,7 @@ type IMProcessor struct {
 func NewProcessor(cfg IMConfig, db telegram.Storage) *IMProcessor {
 	return &IMProcessor{
 		outDir:     cfg.OutDir(),
-		workingDir: "./res/tmp",
+		workingDir: "./res/tmp/",
 		db:         db,
 	}
 }
