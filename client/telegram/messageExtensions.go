@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"errors"
+	"log"
 	"strings"
 
 	"github.com/go-telegram/bot/models"
@@ -29,4 +30,28 @@ func hasPhotoAttached(m *models.Message) bool {
 	default:
 		return false
 	}
+}
+
+func getFilterNameFromTextEntities(m *models.Message) string {
+	if m == nil {
+		log.Default().Println("getFilterNameFromTextEntities - message is nil")
+		return ""
+	}
+
+	for i := 0; i < len(m.Entities); i++ {
+		ent := m.Entities[i]
+		switch ent.Type {
+		case models.MessageEntityTypeBotCommand:
+			stripOff := ent.Length + ent.Offset + 1
+			if stripOff >= len(m.Text) {
+				return ""
+			}
+
+			return m.Text[ent.Length+ent.Offset+1:]
+		default:
+			continue
+		}
+	}
+
+	return ""
 }

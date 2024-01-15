@@ -45,9 +45,21 @@ func (h *ReplyToPhotoHandler) WillHandle(update *models.Update) bool {
 func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	msg := update.Message.ReplyToMessage
 
-	fileId, err := getFileId(msg)
+	filterName := getFilterNameFromTextEntities(update.Message)
+	filter, err := h.imageLoader.storage.FindFilter(filterName)
+
 	if err != nil {
-		h.log.Err(err)
+		h.log.ErrStr(fmt.Sprintf("failed to find filter %s", filterName))
+		bot.SendMessage(ctx,
+			&tg.SendMessageParams{
+				ChatID: update.Message.Chat.ID,
+				Text: `Упс!
+Указан недоступный фильтр.
+
+Чтобы узнать доступные фильтры,
+используйте команду /filters`,
+			},
+		)
 		return
 	}
 
@@ -59,16 +71,19 @@ func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 		},
 	)
 
-	var cmd string
+	fileId, err := getFileId(msg)
+	if err != nil {
+		h.log.Err(err)
 
-	for i := 0; i < len(update.Message.Entities) && cmd == ""; i++ {
-		ent := update.Message.Entities[i]
-		switch ent.Type {
-		case models.MessageEntityTypeBotCommand:
-			cmd = update.Message.Text[ent.Length+ent.Offset+1:]
-		default:
-			continue
-		}
+		bot.SendMessage(ctx,
+			&tg.SendMessageParams{
+				ChatID: update.Message.Chat.ID,
+				Text: `Упс!
+Проблема с получением файла.
+Попробуйте отправить файл заново.`,
+			},
+		)
+		return
 	}
 
 	params := tg.GetFileParams{}
@@ -88,7 +103,7 @@ func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 		url:         dlLink,
 		outFilename: file.FileID + path.Ext(dlLink),
 		requesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
-		filter:      cmd,
+		filter:      filter.Name,
 	}
 
 	go h.imageLoader.downloadPhoto(dlParams)

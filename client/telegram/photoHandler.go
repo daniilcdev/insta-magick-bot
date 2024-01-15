@@ -12,7 +12,7 @@ func (tc *TelegramClient) photoMessageMatch(update *models.Update) bool {
 }
 
 func (tc *TelegramClient) photoMessageHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
-	go bot.SendMessage(ctx,
+	bot.SendMessage(ctx,
 		&tg.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
 			Text: `Отлично!
