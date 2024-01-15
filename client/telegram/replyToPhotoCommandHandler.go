@@ -54,7 +54,8 @@ func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 	go bot.SendMessage(ctx,
 		&tg.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
-			Text:   "Result will be sent back shortly...",
+			Text: `Отлично!
+Вскоре я отправлю Вам результат обработки.`,
 		},
 	)
 
@@ -76,7 +77,7 @@ func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 	if err != nil {
 		bot.SendMessage(ctx, &tg.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
-			Text:   "Failed to request image file: " + err.Error(),
+			Text:   "Oops!\n" + err.Error(),
 		},
 		)
 		return
