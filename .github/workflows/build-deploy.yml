@@ -11,9 +11,6 @@ on:
 env:
   GOOS: linux
   GOARCH: arm64
-  CGO_ENABLED: 1
-  CC: aarch64-linux-gnu-gcc
-  CXX: aarch64-linux-gnu-g++
 
 jobs:
   build:
@@ -38,7 +35,7 @@ jobs:
     runs-on: self-hosted
     needs: build
     steps:
-    - name: Deploy Containers
+    - name: Deploy Postgres Container
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         echo "DB_USER="${{secrets.DB_USER}} > .env && \
@@ -46,12 +43,15 @@ jobs:
         echo "DB_NAME="${{secrets.DB_NAME}} >> .env && \
         echo "DOCKER_DB_VOLUME="${{secrets.DOCKER_DB_VOLUME}} >> .env && \
         echo "DOCKER_LOCAL_VOLUME="${{secrets.DOCKER_LOCAL_VOLUME}} >> .env && \
-        sudo docker compose up -d
+        echo "DOCKER_LOCAL_MOUNT="${{secrets.LOCAL_MOUNT}} >> .env && \
 
-    - name: Deploy Imbot
+        sudo docker compose up -d database
+
+    - name: Deploy Imbot Container
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up
-        sudo systemctl stop imbot
-        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
-        sudo systemctl start imbot
+        docker compose up -d im-worker --build
+#        sudo systemctl stop imbot
+#        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
+#        sudo systemctl start imbot
