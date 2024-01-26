@@ -12,7 +12,7 @@ import (
 
 const createRequest = `-- name: CreateRequest :exec
 INSERT INTO requests (file, requester_id, filter_name)
-VALUES (?, ?, ?)
+VALUES ($1, $2, $3)
 `
 
 type CreateRequestParams struct {
@@ -28,7 +28,7 @@ func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) er
 
 const deleteRequestsInStatus = `-- name: DeleteRequestsInStatus :exec
 DELETE FROM requests
-WHERE status = ?
+WHERE status = $1
 `
 
 func (q *Queries) DeleteRequestsInStatus(ctx context.Context, status string) error {
@@ -38,7 +38,7 @@ func (q *Queries) DeleteRequestsInStatus(ctx context.Context, status string) err
 
 const getRequestsInStatus = `-- name: GetRequestsInStatus :many
 SELECT file, requester_id FROM requests
-WHERE status = ?
+WHERE status = $1
 `
 
 type GetRequestsInStatusRow struct {
@@ -71,13 +71,12 @@ func (q *Queries) GetRequestsInStatus(ctx context.Context, status string) ([]Get
 
 const schedulePending = `-- name: SchedulePending :many
 UPDATE requests
-SET status = "Processing"
+SET status = 'Processing'
 WHERE id in (
         SELECT id
         FROM requests
-        WHERE status = "Pending"
-        LIMIT ?
-    )
+        WHERE status = 'Pending'
+        LIMIT $1)
 RETURNING file, filter_name
 `
 
@@ -112,8 +111,8 @@ func (q *Queries) SchedulePending(ctx context.Context, limit int64) ([]ScheduleP
 
 const updateRequestsStatus = `-- name: UpdateRequestsStatus :exec
 UPDATE requests
-SET status = ?
-WHERE file in (/*SLICE:filenames*/?)
+SET status = $1
+WHERE file in ($2)
 `
 
 type UpdateRequestsStatusParams struct {

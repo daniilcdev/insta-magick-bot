@@ -9,7 +9,7 @@ import (
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	"github.com/daniilcdev/insta-magick-bot/config"
 	"github.com/daniilcdev/insta-magick-bot/generated/queries"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 )
 
 type SqliteStorage struct {
@@ -68,7 +68,7 @@ func (s *SqliteStorage) CreateRequest(newRequest *telegram.NewRequest) {
 func (s *SqliteStorage) Schedule(limit int64) []queries.SchedulePendingRow {
 	rows, err := s.q.SchedulePending(context.Background(), limit)
 	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
+		log.Printf("[ERROR] (Schedule) - '%v'\n", err)
 		return nil
 	}
 
@@ -78,7 +78,7 @@ func (s *SqliteStorage) Schedule(limit int64) []queries.SchedulePendingRow {
 func (s *SqliteStorage) GetCompleted() []queries.GetRequestsInStatusRow {
 	rows, err := s.q.GetRequestsInStatus(context.Background(), string(Completed))
 	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
+		log.Printf("[ERROR] (GetCompleted) - '%v'\n", err)
 		return nil
 	}
 

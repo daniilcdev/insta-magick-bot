@@ -102,6 +102,7 @@ func (im *IMProcessor) ProcessNewFilesInDir(path string) {
 		case nil:
 			im.db.CompleteRequests(files)
 		default:
+			log.Printf("IM process failed, rolling back; error: '%v'\n", err)
 			im.db.Rollback(files)
 		}
 	}
