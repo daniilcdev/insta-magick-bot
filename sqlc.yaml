@@ -1,9 +1,12 @@
 version: "2"
 sql:
-  - engine: "sqlite"
+  - engine: "postgresql"
     schema: "schemas/"
     queries: "queries/"
     gen:
       go:
         package: "queries"
         out: "generated/queries"
+        overrides:
+          - db_type: "integer"
+            go_type: "int64"

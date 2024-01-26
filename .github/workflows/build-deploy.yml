@@ -4,6 +4,7 @@
 name: Build&Deploy
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main" ]
 
@@ -33,11 +34,20 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-    - name: Deploy
+    - name: Deploy Containers
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-        goose -dir=schemas sqlite3 ${{secrets.RUNTIME_DIRECTORY}}/db/${{secrets.DB_NAME}} up
-        sudo systemctl stop imbot
-        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
-        sudo systemctl start imbot
-        
+        echo "DB_USER="${{secrets.DB_USER}} > .env && \
+        echo "DB_PASS="${{secrets.DB_PASS}} >> .env && \
+        echo "DB_NAME="${{secrets.DB_NAME}} >> .env && \
+        echo "DOCKER_DB_VOLUME="${{secrets.DOCKER_DB_VOLUME}} >> .env && \
+        echo "DOCKER_LOCAL_VOLUME="${{secrets.DOCKER_LOCAL_VOLUME}} >> .env && \
+        sudo docker compose up -d
+
+    - name: Deploy Imbot
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up
+#        sudo systemctl stop imbot
+#        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
+#        sudo systemctl start imbot
