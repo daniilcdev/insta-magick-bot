@@ -33,7 +33,11 @@ jobs:
 
     - name: Test
       run: go test -v ./...
-
+  
+  deploy:
+    runs-on: self-hosted
+    needs: build
+    steps:
     - name: Deploy Containers
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
