@@ -6,7 +6,7 @@ name: Build&Deploy
 on:
   workflow_dispatch:
   push:
-    branches: [ "main", "feature/postgres-db" ]
+    branches: [ "main" ]
 
 env:
   GOOS: linux
@@ -52,6 +52,6 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up
-#        sudo systemctl stop imbot
-#        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
-#        sudo systemctl start imbot
+        sudo systemctl stop imbot
+        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
+        sudo systemctl start imbot
