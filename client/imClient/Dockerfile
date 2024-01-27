@@ -1,11 +1,12 @@
-FROM alpine:3.19
+FROM bitnami/minideb:bookworm
 
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache imagemagick
+RUN apt update && \
+    apt upgrade && \
+    apt install imagemagick -y && \
+    apt autoremove
 
-CMD mkdir -p /home/im-worker/res/tmp \
+RUN mkdir -p /home/im-worker/res/tmp \
  /home/im-worker/res/pending \
  /home/im-worker/res/processed
 
-ENTRYPOINT /sbin/init
+ENTRYPOINT ["tail" , "-f" , "/dev/null" ]
