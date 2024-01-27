@@ -29,7 +29,7 @@ jobs:
       run: go build -o=./imbot -v .
 
     - name: Build Imbot (Worker)
-      run: go build -o=./workers/im-worker -v ./workers/im-work
+      run: go build -o=./workers/im-worker/im-worker -v ./workers/im-worker
 
     - name: Test
       run: go test -v ./...

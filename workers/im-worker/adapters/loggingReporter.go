@@ -12,9 +12,8 @@ type loggingWorkReporter struct {
 }
 
 func NewLoggingReporter() ports.WorkReporter {
-
 	return &loggingWorkReporter{
-		logger: log.New(os.Stdout, "im-worker", log.LstdFlags|log.LUTC),
+		logger: log.New(os.Stdout, "[im-worker] ", log.LstdFlags|log.LUTC),
 	}
 }
 

@@ -6,9 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"github.com/daniilcdev/insta-magick-bot/workers"
 	"github.com/daniilcdev/insta-magick-bot/workers/im-worker/adapters"
 )
 
@@ -30,11 +28,8 @@ func main() {
 	workReceiver := &adapters.WorkReceiver{
 		W: imc,
 	}
-	scanner_receive := workers.PipelineTrigger{
-		Handler: workReceiver,
-	}
 
-	go scanner_receive.KeepScanning(ctx, cfg.InDir(), 30*time.Second)
+	go workReceiver.StartReceiving()
 
 	log.Default().Println("worker started...")
 	waitForInterrupt()

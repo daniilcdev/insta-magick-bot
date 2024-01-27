@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -47,6 +48,10 @@ func (im *IMProcessor) applyFilter(work *types.Work) error {
 		return errors.New("no instruction")
 	}
 
+	if _, err := os.Stat(im.inDir + work.File); err != nil {
+		return errors.New("image not found")
+	}
+
 	log.Printf("[IMProcessor] processing files with filter %s\n", work.Filter)
 
 	inFile := im.inDir + work.File
@@ -56,15 +61,6 @@ func (im *IMProcessor) applyFilter(work *types.Work) error {
 	args = append(args, outFile)
 	cmd := exec.Command("convert", args...)
 	_, err := cmd.Output()
-
-	switch errType := err.(type) {
-	case *exec.ExitError:
-		log.Printf("IM process failed: %s\n", string(errType.Stderr))
-	case error:
-		// do nothing there
-	default:
-		log.Printf("IM process exited unexpectedly: %s\n", errType.Error())
-	}
 
 	return err
 }

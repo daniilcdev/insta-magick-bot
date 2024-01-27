@@ -9,22 +9,24 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASS}
       - POSTGRES_DB=${DB_NAME}
-    volumes: 
+    volumes:
       - ${DOCKER_LOCAL_VOLUME}:${DOCKER_DB_VOLUME}
     networks:
       - "postgres"
     ports:
       - 5432:5432
   im-worker:
-    build: ./workers/im-worker
+    build: ./workers/im-worker/
     container_name: im-worker
+    ports:
+      - 8008:8008
+    volumes:
+      - ${DOCKER_LOCAL_MOUNT}/im-worker-cache:/home/im-worker
     deploy:
       restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
-    volumes: 
-    - ${DOCKER_LOCAL_MOUNT}/im-worker-cache:/home/im-worker
 
 networks:
   postgres:
