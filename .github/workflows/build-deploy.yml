@@ -50,8 +50,8 @@ jobs:
     - name: Deploy Imbot Container
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-         sudo docker compose up -d im-worker --build
-#        goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up
+        goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up
+        sudo docker compose up -d im-worker --build
 #        sudo systemctl stop imbot
 #        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
 #        sudo systemctl start imbot

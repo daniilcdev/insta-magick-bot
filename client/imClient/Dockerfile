@@ -1,4 +1,4 @@
-FROM bitnami/minideb:bookworm
+FROM debian:bookworm-slim
 
 RUN apt update && \
     apt upgrade && \
