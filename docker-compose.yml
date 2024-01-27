@@ -16,9 +16,12 @@ services:
     ports:
       - 5432:5432
   im-worker:
-    build: ./client/imClient
+    build: ./workers/im-worker
     container_name: im-worker
-    restart: always
+    restart_policy:
+      condition: on-failure
+      delay: 5s
+      max_attempts: 3
     volumes: 
     - ${DOCKER_LOCAL_MOUNT}/im-worker-cache:/home/im-worker
 

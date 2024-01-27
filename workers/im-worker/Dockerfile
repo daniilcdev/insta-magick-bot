@@ -9,4 +9,7 @@ RUN mkdir -p /home/im-worker/res/tmp \
  /home/im-worker/res/pending \
  /home/im-worker/res/processed
 
-ENTRYPOINT ["tail" , "-f" , "/dev/null" ]
+COPY ./env /home/im-worker/env
+COPY ./im-worker /home/im-worker/im-worker
+
+ENTRYPOINT [ "bash", "/home/im-worker/im-worker" ]

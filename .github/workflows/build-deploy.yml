@@ -25,8 +25,11 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: Build
+    - name: Build Imbot (Full)
       run: go build -o=./imbot -v .
+
+    - name: Build Imbot (Worker)
+      run: go build -o=./workers/im-worker -v ./workers/im-work
 
     - name: Test
       run: go test -v ./...
