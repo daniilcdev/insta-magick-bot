@@ -14,7 +14,6 @@ import (
 
 func main() {
 	cfg := Load()
-
 	fsOK := directoryReachable(cfg.InDir()) &&
 		directoryReachable(cfg.OutDir()) && directoryReachable(cfg.TempDir())
 
@@ -37,6 +36,7 @@ func main() {
 
 	go scanner_receive.KeepScanning(ctx, cfg.InDir(), 30*time.Second)
 
+	log.Default().Println("worker started...")
 	waitForInterrupt()
 	cancel()
 	<-ctx.Done()
@@ -47,11 +47,13 @@ func directoryReachable(dir string) bool {
 
 	switch {
 	case os.IsNotExist(err):
+		log.Println(err)
 		return false
 	case err != nil:
+		log.Println(err)
 		return false
 	default:
-		return false
+		return true
 	}
 }
 

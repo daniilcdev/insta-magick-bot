@@ -12,4 +12,5 @@ RUN mkdir -p /home/im-worker/res/tmp \
 COPY ./env /home/im-worker/env
 COPY ./im-worker /home/im-worker/im-worker
 
-ENTRYPOINT [ "bash", "/home/im-worker/im-worker" ]
+WORKDIR "/home/im-worker/"
+ENTRYPOINT [ "./im-worker" ]

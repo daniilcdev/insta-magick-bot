@@ -18,10 +18,11 @@ services:
   im-worker:
     build: ./workers/im-worker
     container_name: im-worker
-    restart_policy:
-      condition: on-failure
-      delay: 5s
-      max_attempts: 3
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
     volumes: 
     - ${DOCKER_LOCAL_MOUNT}/im-worker-cache:/home/im-worker
 
