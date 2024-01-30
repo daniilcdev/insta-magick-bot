@@ -15,6 +15,15 @@ services:
       - "postgres"
     ports:
       - 5432:5432
+
+  nats:
+    image: nats
+    ports:
+      - 4222:4222
+      - 8222:8222
+    networks:
+      - "nats"
+
   im-worker:
     build: ./workers/im-worker/
     container_name: im-worker
@@ -27,7 +36,11 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 3
+    networks:
+      - "nats"
 
 networks:
   postgres:
     driver: "bridge"
+  nats:
+    name: "nats"
