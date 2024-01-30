@@ -7,11 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/daniilcdev/insta-magick-bot/workers/im-worker/adapters"
+	mq "github.com/daniilcdev/insta-magick-bot/workers/im-worker/cmd/im-service-mq"
+	"github.com/daniilcdev/insta-magick-bot/workers/im-worker/config"
 )
 
 func main() {
-	cfg := Load()
+	cfg := config.Load()
 	fsOK := directoryReachable(cfg.InDir()) &&
 		directoryReachable(cfg.OutDir()) && directoryReachable(cfg.TempDir())
 
@@ -21,14 +22,15 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	imc := NewProcessor(cfg)
 
-	// TODO: handle 'stale' completed files
-
-	imc := NewProcessor(cfg).WithWorkReporter(adapters.NewLoggingReporter())
-	workReceiver := &adapters.WorkReceiver{
+	workReceiver := &mq.MQWorkReceiver{
 		W: imc,
 	}
 
+	defer workReceiver.Close()
+
+	// TODO: handle 'stale' completed files
 	go workReceiver.StartReceiving()
 
 	log.Default().Println("worker started...")

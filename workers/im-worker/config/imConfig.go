@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"os"
@@ -29,7 +29,7 @@ func (c *imConfig) TempDir() string {
 }
 
 func Load() IMConfig {
-	godotenv.Load("./env/imagemagick.env")
+	godotenv.Load("./config/env/imagemagick.env")
 
 	return &imConfig{
 		in:  os.Getenv("IM_IN_DIR"),

@@ -27,6 +27,7 @@ services:
   im-worker:
     build: ./workers/im-worker/
     container_name: im-worker
+    env_file: .env
     ports:
       - 8008:8008
     volumes:
