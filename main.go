@@ -16,6 +16,7 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
+	InitMessageQueue()
 
 	db, err := adapters.OpenStorageConnection(cfg)
 	if err != nil {
@@ -30,7 +31,8 @@ func main() {
 		WithToken(cfg.BotToken()).
 		WithFiltersPool(db.FilterNames()).
 		WithLogger(adapters.NewLogger().WithTag("BotClient")).
-		WithStorage(db)
+		WithStorage(db).
+		WithWorkScheduler(mq)
 
 	sendBackAdapter := &adapters.SendFileBackHandler{
 		Log:     adapters.NewLogger().WithTag("SendbackAdapter"),

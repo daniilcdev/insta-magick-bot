@@ -30,8 +30,6 @@ services:
     env_file: .env
     ports:
       - 8008:8008
-    volumes:
-      - ${DOCKER_LOCAL_MOUNT}/im-worker-cache:/home/im-worker
     deploy:
       restart_policy:
         condition: on-failure

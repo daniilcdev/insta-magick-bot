@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync"
 
+	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
@@ -15,6 +16,7 @@ type TelegramClient struct {
 	log         Logger
 	bot         *tg.Bot
 	imgLoader   *imageWebLoader
+	scheduler   WorkScheduler
 	ctx         context.Context
 	filtersPool []string
 	cfg         BotConfig
@@ -56,6 +58,15 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 	return tc
 }
 
+type WorkScheduler interface {
+	Schedule(work types.Work) error
+}
+
+func (tc *TelegramClient) WithWorkScheduler(scheduler WorkScheduler) *TelegramClient {
+	tc.scheduler = scheduler
+	return tc
+}
+
 func (tc *TelegramClient) WithLogger(logger Logger) *TelegramClient {
 	tc.log = logger
 	return tc
@@ -77,7 +88,8 @@ func (tc *TelegramClient) Start() {
 
 	replyHandler := NewReplyToPhoto().
 		WithLogger(tc.log).
-		WithImageLoader(tc.imgLoader)
+		WithImageLoader(tc.imgLoader).
+		WithScheduler(tc.scheduler)
 
 	tc.bot.RegisterHandlerMatchFunc(replyHandler.WillHandle, replyHandler.Handle)
 

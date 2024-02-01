@@ -18,7 +18,7 @@ type MQWorkReceiver struct {
 func (wr *MQWorkReceiver) StartReceiving() {
 	var nc *nats.Conn
 	var err error
-	if nc, err = nats.Connect(nats.DefaultURL); err != nil {
+	if nc, err = nats.Connect("nats:4222"); err != nil {
 		log.Fatalln(err)
 		return
 	}
@@ -29,7 +29,7 @@ func (wr *MQWorkReceiver) StartReceiving() {
 		log.Fatalf("failed to subscribe: topic '%s'\n", err)
 	}
 
-	log.Println("worker subscriped")
+	log.Println("worker subscribed")
 }
 
 func (wr *MQWorkReceiver) Close() {
@@ -53,7 +53,7 @@ func (wr *MQWorkReceiver) onWorkCreated(msg *nats.Msg) {
 	wr.done(work)
 }
 
-func (wr *MQWorkReceiver) done(work any) {
+func (wr *MQWorkReceiver) done(work types.Work) {
 	data, err := json.Marshal(work)
 	if err != nil {
 		log.Printf("failed to serialize failed work: '%v'\n", work)
@@ -63,7 +63,7 @@ func (wr *MQWorkReceiver) done(work any) {
 	wr.nc.Publish(internal.WorkDone, data)
 }
 
-func (wr *MQWorkReceiver) failed(work any) {
+func (wr *MQWorkReceiver) failed(work types.Work) {
 	data, err := json.Marshal(work)
 	if err != nil {
 		log.Printf("failed to serialize failed work: '%v'\n", work)

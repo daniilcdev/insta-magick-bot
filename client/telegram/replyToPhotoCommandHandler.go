@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"path"
 
+	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
 type ReplyToPhotoHandler struct {
 	imageLoader *imageWebLoader
+	scheduler   WorkScheduler
 	log         Logger
 }
 
@@ -22,6 +24,11 @@ func NewReplyToPhoto() *ReplyToPhotoHandler {
 
 func (h *ReplyToPhotoHandler) WithLogger(log Logger) *ReplyToPhotoHandler {
 	h.log = log
+	return h
+}
+
+func (h *ReplyToPhotoHandler) WithScheduler(scheduler WorkScheduler) *ReplyToPhotoHandler {
+	h.scheduler = scheduler
 	return h
 }
 
@@ -107,4 +114,10 @@ func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 	}
 
 	go h.imageLoader.downloadPhoto(dlParams)
+
+	h.scheduler.Schedule(types.Work{
+		File:        dlParams.outFilename,
+		RequesterId: dlParams.requesterId,
+		Filter:      types.Instructions(filter.Receipt),
+	})
 }
