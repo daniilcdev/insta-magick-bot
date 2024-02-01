@@ -1,8 +1,6 @@
 #!/bin/bash
 
-cd workers/im-worker
-pwd
-go build -o=./im-worker -v ./cmd/im-service/...
+go build -o=$DOCKER_LOCAL_MOUNT/im-worker -v ./workers/im-worker/cmd/im-service/...
+cp -r ./workers/im-worker/config/env $DOCKER_LOCAL_MOUNT/config
 
-cd ../../
 sudo docker compose up -d im-worker --build

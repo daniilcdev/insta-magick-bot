@@ -11,9 +11,9 @@ import (
 )
 
 type ReplyToPhotoHandler struct {
-	imageLoader *imageWebLoader
-	scheduler   WorkScheduler
-	log         Logger
+	scheduler WorkScheduler
+	storage   Storage
+	log       Logger
 }
 
 func NewReplyToPhoto() *ReplyToPhotoHandler {
@@ -32,8 +32,8 @@ func (h *ReplyToPhotoHandler) WithScheduler(scheduler WorkScheduler) *ReplyToPho
 	return h
 }
 
-func (h *ReplyToPhotoHandler) WithImageLoader(loader *imageWebLoader) *ReplyToPhotoHandler {
-	h.imageLoader = loader
+func (h *ReplyToPhotoHandler) WithStorage(storage Storage) *ReplyToPhotoHandler {
+	h.storage = storage
 	return h
 }
 
@@ -53,7 +53,7 @@ func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 	msg := update.Message.ReplyToMessage
 
 	filterName := getFilterNameFromTextEntities(update.Message)
-	filter, err := h.imageLoader.storage.FindFilter(filterName)
+	filter, err := h.storage.FindFilter(filterName)
 
 	if err != nil {
 		h.log.ErrStr(fmt.Sprintf("failed to find filter %s", filterName))
@@ -106,18 +106,10 @@ func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 	}
 
 	dlLink := bot.FileDownloadLink(file)
-	dlParams := downloadParams{
-		url:         dlLink,
-		outFilename: file.FileID + path.Ext(dlLink),
-		requesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
-		filter:      filter.Name,
-	}
-
-	go h.imageLoader.downloadPhoto(dlParams)
-
 	h.scheduler.Schedule(types.Work{
-		File:        dlParams.outFilename,
-		RequesterId: dlParams.requesterId,
+		File:        file.FileID + path.Ext(dlLink),
+		RequesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
 		Filter:      types.Instructions(filter.Receipt),
+		URL:         dlLink,
 	})
 }

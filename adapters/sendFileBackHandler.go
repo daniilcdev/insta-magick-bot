@@ -41,11 +41,26 @@ func (sb *SendFileBackHandler) OnProcessCompleted(dir string) {
 		defer f.Close()
 
 		wg.Add(1)
-		go sb.Client.SendPhoto(&wg, r.RequesterID, &models.InputFileUpload{
+		go sb.Client.SendPhoto(r.RequesterID, &models.InputFileUpload{
 			Filename: r.File,
 			Data:     f,
 		})
 	}
 
 	wg.Wait()
+}
+
+func (sb *SendFileBackHandler) SendResult(file, requester string) {
+	filePath := "./volume/res/processed/" + file
+	f, err := os.Open(filePath)
+	if err != nil {
+		sb.Log.Err(err)
+		return
+	}
+	defer f.Close()
+
+	sb.Client.SendPhoto(requester, &models.InputFileUpload{
+		Filename: file,
+		Data:     f,
+	})
 }

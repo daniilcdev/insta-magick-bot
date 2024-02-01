@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
@@ -26,8 +28,7 @@ func NewProcessor(cfg config.IMConfig) *IMProcessor {
 }
 
 func (im *IMProcessor) Do(work types.Work) error {
-	err := im.doNow(&work)
-	return err
+	return im.doNow(&work)
 }
 
 func (im *IMProcessor) doNow(work *types.Work) error {
@@ -35,19 +36,48 @@ func (im *IMProcessor) doNow(work *types.Work) error {
 		return errors.New("no instruction")
 	}
 
-	if _, err := os.Stat(im.inDir + work.File); err != nil {
+	inFile := im.inDir + work.File
+	if err := saveImage(work.URL, inFile); err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(inFile); err != nil {
 		return errors.New("image not found")
 	}
 
-	log.Printf("[IMProcessor] processing files with filter %s\n", work.Filter)
-
-	inFile := im.inDir + work.File
 	outFile := im.outDir + work.File
 
 	args := strings.Split(inFile+" "+string(work.Filter), " ")
 	args = append(args, outFile)
+
+	log.Printf("processing with filter '%s'\n", work.Filter)
 	cmd := exec.Command("convert", args...)
 	_, err := cmd.Output()
 
 	return err
+}
+
+func saveImage(url, filePath string) error {
+	response, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		return errors.New("received non-200 response code")
+	}
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, response.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

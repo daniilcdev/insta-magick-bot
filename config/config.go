@@ -3,13 +3,11 @@ package config
 import (
 	"os"
 
-	imclient "github.com/daniilcdev/insta-magick-bot/client/imClient"
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
-	imclient.IMConfig
 	telegram.BotConfig
 
 	inDir    string
@@ -27,8 +25,6 @@ func LoadConfig() *AppConfig {
 	)
 	return &AppConfig{
 		botToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
-		inDir:    os.Getenv("IM_IN_DIR"),
-		outDir:   os.Getenv("IM_OUT_DIR"),
 		dbDriver: os.Getenv("DB_DRIVER"),
 		dbConn:   os.Getenv("DB_CONN"),
 	}

@@ -59,13 +59,12 @@ func onFailed(msg *nats.Msg) {
 
 func onDone(msg *nats.Msg) {
 	work, err := getWork(msg)
-
 	if err != nil {
 		log.Printf("unable to unmarshal on success: '%v'\n", err)
 		return
 	}
 
-	log.Printf("successful work: '%v'\n", work)
+	sendBackAdapter.SendResult(work.File, work.RequesterId)
 }
 
 func getWork(msg *nats.Msg) (*types.Work, error) {

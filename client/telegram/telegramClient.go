@@ -5,17 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
 
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
+type WorkScheduler interface {
+	Schedule(work types.Work) error
+}
+
 type TelegramClient struct {
 	log         Logger
 	bot         *tg.Bot
-	imgLoader   *imageWebLoader
 	scheduler   WorkScheduler
 	ctx         context.Context
 	filtersPool []string
@@ -29,10 +31,6 @@ func NewBotClient(ctx context.Context, cfg BotConfig) *TelegramClient {
 	}
 
 	tgc.ctx = ctx
-	tgc.imgLoader = &imageWebLoader{
-		outDir: cfg.DownloadDir(),
-	}
-
 	return &tgc
 }
 
@@ -58,10 +56,6 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 	return tc
 }
 
-type WorkScheduler interface {
-	Schedule(work types.Work) error
-}
-
 func (tc *TelegramClient) WithWorkScheduler(scheduler WorkScheduler) *TelegramClient {
 	tc.scheduler = scheduler
 	return tc
@@ -72,12 +66,7 @@ func (tc *TelegramClient) WithLogger(logger Logger) *TelegramClient {
 	return tc
 }
 
-func (tc *TelegramClient) WithStorage(storage Storage) *TelegramClient {
-	tc.imgLoader.storage = storage
-	return tc
-}
-
-func (tc *TelegramClient) Start() {
+func (tc *TelegramClient) Start(storage Storage) {
 	if tc.bot == nil {
 		panic("can't start client - bot wasn't set")
 	}
@@ -88,7 +77,7 @@ func (tc *TelegramClient) Start() {
 
 	replyHandler := NewReplyToPhoto().
 		WithLogger(tc.log).
-		WithImageLoader(tc.imgLoader).
+		WithStorage(storage).
 		WithScheduler(tc.scheduler)
 
 	tc.bot.RegisterHandlerMatchFunc(replyHandler.WillHandle, replyHandler.Handle)
@@ -102,9 +91,7 @@ func (tc *TelegramClient) WithFiltersPool(pool []string) *TelegramClient {
 	return tc
 }
 
-func (tc *TelegramClient) SendPhoto(wg *sync.WaitGroup, chatId any, inputFile models.InputFile) {
-	defer wg.Done()
-
+func (tc *TelegramClient) SendPhoto(chatId any, inputFile models.InputFile) {
 	params := &tg.SendPhotoParams{
 		ChatID: chatId,
 		Photo:  inputFile,
