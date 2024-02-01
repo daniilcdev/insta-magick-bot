@@ -18,6 +18,7 @@ services:
 
   nats:
     image: nats
+    container_name: nats
     ports:
       - 4222:4222
       - 8222:8222
@@ -29,7 +30,7 @@ services:
     container_name: im-worker
     env_file: .env
     volumes:
-      - ./volume:/home/im-worker
+      - ${DOCKER_LOCAL_MOUNT}:/home/im-worker
     depends_on:
       - nats
     deploy:      
