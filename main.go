@@ -9,15 +9,20 @@ import (
 	"github.com/daniilcdev/insta-magick-bot/adapters"
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
 	"github.com/daniilcdev/insta-magick-bot/config"
+	"github.com/daniilcdev/insta-magick-bot/internal"
+	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
+	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 )
 
-var sendBackAdapter *adapters.SendFileBackHandler
-
 func main() {
-	cfg := config.LoadConfig()
-	InitMessageQueue()
-	defer mq.ns.Drain()
+	mq := messaging.InitMessageQueue()
+	defer mq.Close()
 
+	workDone := make(chan *types.Work)
+	mq.Notify(internal.WorkDone, workDone)
+	defer close(workDone)
+
+	cfg := config.LoadConfig()
 	db, err := adapters.OpenStorageConnection(cfg)
 	if err != nil {
 		log.Fatal(err)
@@ -33,11 +38,14 @@ func main() {
 		WithLogger(adapters.NewLogger().WithTag("BotClient")).
 		WithWorkScheduler(mq)
 
-	sendBackAdapter = &adapters.SendFileBackHandler{
-		Log:     adapters.NewLogger().WithTag("SendbackAdapter"),
-		Client:  botClient,
-		Storage: db,
+	sendBackAdapter := &adapters.SendFileBackHandler{
+		Log:        adapters.NewLogger().WithTag("SendbackAdapter"),
+		Client:     botClient,
+		Storage:    db,
+		ResultsDir: cfg.ResultsDir(),
 	}
+	go sendBackAdapter.ListenResult(ctx, workDone)
+
 	go botClient.Start(db)
 
 	waitForExit()

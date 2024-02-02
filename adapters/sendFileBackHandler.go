@@ -1,57 +1,34 @@
 package adapters
 
 import (
+	"context"
 	"os"
-	"sync"
 
 	"github.com/daniilcdev/insta-magick-bot/client/telegram"
-	"github.com/daniilcdev/insta-magick-bot/generated/queries"
+	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	"github.com/go-telegram/bot/models"
 )
 
 type SendFileBackHandler struct {
-	Log     telegram.Logger
-	Client  *telegram.TelegramClient
-	Storage telegram.Storage
+	Log        telegram.Logger
+	Client     *telegram.TelegramClient
+	Storage    telegram.Storage
+	ResultsDir string
 }
 
-func (sb *SendFileBackHandler) OnProcessCompleted(dir string) {
-	responses := sb.Storage.GetCompleted()
-
-	if len(responses) == 0 {
-		return
-	}
-
-	defer func(d string, f []queries.GetRequestsInStatusRow) {
-		sb.Storage.RemoveCompleted()
-
-		for _, r := range f {
-			os.Remove(d + r.File)
+func (sb *SendFileBackHandler) ListenResult(ctx context.Context, result chan *types.Work) {
+	for {
+		select {
+		case work := <-result:
+			sb.do(work)
+		case <-ctx.Done():
+			return
 		}
-
-	}(dir, responses)
-
-	wg := sync.WaitGroup{}
-	for _, r := range responses {
-		f, err := os.Open(dir + r.File)
-		if err != nil {
-			sb.Log.Err(err)
-			continue
-		}
-		defer f.Close()
-
-		wg.Add(1)
-		go sb.Client.SendPhoto(r.RequesterID, &models.InputFileUpload{
-			Filename: r.File,
-			Data:     f,
-		})
 	}
-
-	wg.Wait()
 }
 
-func (sb *SendFileBackHandler) SendResult(file, requester string) {
-	filePath := "./volume/res/processed/" + file
+func (sb *SendFileBackHandler) do(work *types.Work) {
+	filePath := sb.ResultsDir + work.File
 	f, err := os.Open(filePath)
 	if err != nil {
 		sb.Log.Err(err)
@@ -59,8 +36,8 @@ func (sb *SendFileBackHandler) SendResult(file, requester string) {
 	}
 	defer f.Close()
 
-	sb.Client.SendPhoto(requester, &models.InputFileUpload{
-		Filename: file,
+	sb.Client.SendPhoto(work.RequesterId, &models.InputFileUpload{
+		Filename: work.RequesterId,
 		Data:     f,
 	})
 }
