@@ -5,7 +5,7 @@ RUN apt-get update && \
     apt-get autoremove
 
 COPY ./config/env/ /home/im-worker/config
-COPY ./im-worker /home/im-worker/im-worker
+COPY ./im-worker /home/im-worker/
 
 WORKDIR /home/im-worker/
 
