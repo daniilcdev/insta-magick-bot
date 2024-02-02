@@ -4,6 +4,8 @@ RUN apt-get update && \
     apt-get install -y imagemagick ca-certificates && \
     apt-get autoremove
 
+VOLUME [ "/home/im-worker/" ]
+
 #COPY ./config/env/ /home/im-worker/config
 #COPY ./im-worker /home/im-worker/
 

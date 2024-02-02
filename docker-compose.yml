@@ -29,7 +29,7 @@ services:
     build: ./workers/im-worker/
     container_name: im-worker
     volumes:
-      - /mnt/storage/im-worker-volume:/home/im-worker
+      - im-worker-volume:/home/im-worker
     depends_on:
       - nats
     deploy:
@@ -39,6 +39,10 @@ services:
         max_attempts: 3
     networks:
       - "nats"
+
+volumes:
+  im-worker-volume:
+    driver: local
 
 networks:
   postgres:
