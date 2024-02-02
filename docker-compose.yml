@@ -32,7 +32,7 @@ services:
       - /mnt/storage/im-worker-volume:/home/im-worker
     depends_on:
       - nats
-    deploy:      
+    deploy:
       restart_policy:
         condition: on-failure
         delay: 5s
