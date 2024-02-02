@@ -28,7 +28,7 @@ services:
   im-worker:
     build: ./workers/im-worker/
     container_name: im-worker
-    env_file: .env
+    env_file: ./.env
     volumes:
       - ${DOCKER_LOCAL_MOUNT}:/home/im-worker
     depends_on:
