@@ -29,7 +29,7 @@ services:
     build: ./workers/im-worker/
     container_name: im-worker
     volumes:
-      - ${DOCKER_LOCAL_MOUNT}:/home/im-worker
+      - /mnt/storage/im-worker-volume:/home/im-worker
     depends_on:
       - nats
     deploy:      
