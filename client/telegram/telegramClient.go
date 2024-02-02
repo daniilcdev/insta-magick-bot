@@ -6,25 +6,21 @@ import (
 	"errors"
 	"fmt"
 
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
+	pkg "github.com/daniilcdev/insta-magick-bot/client/telegram/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
-type WorkScheduler interface {
-	Schedule(work types.Work) error
-}
-
 type TelegramClient struct {
 	log         Logger
 	bot         *tg.Bot
-	scheduler   WorkScheduler
+	scheduler   pkg.WorkScheduler
 	ctx         context.Context
 	filtersPool []string
-	cfg         BotConfig
+	cfg         pkg.BotConfig
 }
 
-func NewBotClient(ctx context.Context, cfg BotConfig) *TelegramClient {
+func NewBotClient(ctx context.Context, cfg pkg.BotConfig) *TelegramClient {
 	tgc := TelegramClient{
 		log: &nopLoggerAdapter{},
 		cfg: cfg,
@@ -56,7 +52,7 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 	return tc
 }
 
-func (tc *TelegramClient) WithWorkScheduler(scheduler WorkScheduler) *TelegramClient {
+func (tc *TelegramClient) WithWorkScheduler(scheduler pkg.WorkScheduler) *TelegramClient {
 	tc.scheduler = scheduler
 	return tc
 }
@@ -91,20 +87,6 @@ func (tc *TelegramClient) WithFiltersPool(pool []string) *TelegramClient {
 	return tc
 }
 
-func (tc *TelegramClient) SendPhoto(chatId any, inputFile models.InputFile) {
-	params := &tg.SendPhotoParams{
-		ChatID: chatId,
-		Photo:  inputFile,
-	}
-
-	_, err := tc.bot.SendPhoto(tc.ctx, params)
-
-	if err != nil {
-		tc.log.ErrStr(fmt.Sprintf("failed to send image back %v", err))
-		return
-	}
-}
-
 func (tc *TelegramClient) startHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	bot.SendMessage(ctx, &tg.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
@@ -115,4 +97,15 @@ func (tc *TelegramClient) startHandler(ctx context.Context, bot *tg.Bot, update 
 Чтобы узнать доступные фильтры,
 используйте команду /filters`,
 	})
+}
+
+func (tc *TelegramClient) sendPhoto(chatId string, inputFile models.InputFile) {
+	params := &tg.SendPhotoParams{
+		ChatID: chatId,
+		Photo:  inputFile,
+	}
+
+	if _, err := tc.bot.SendPhoto(tc.ctx, params); err != nil {
+		tc.log.ErrStr(fmt.Sprintf("failed to send image back %v", err))
+	}
 }

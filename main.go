@@ -38,14 +38,7 @@ func main() {
 		WithLogger(adapters.NewLogger().WithTag("BotClient")).
 		WithWorkScheduler(mq)
 
-	sendBackAdapter := &adapters.SendFileBackHandler{
-		Log:        adapters.NewLogger().WithTag("SendbackAdapter"),
-		Client:     botClient,
-		Storage:    db,
-		ResultsDir: cfg.ResultsDir(),
-	}
-	go sendBackAdapter.ListenResult(ctx, workDone)
-
+	go botClient.ListenResult(workDone)
 	go botClient.Start(db)
 
 	waitForExit()
