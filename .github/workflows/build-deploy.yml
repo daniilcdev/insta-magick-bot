@@ -57,6 +57,9 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: sudo docker compose up -d database
 
+    - name: Deploy Im-Worker
+      run: sudo docker compose up -d im-worker --build
+
     - name: Deploy Imbot Container
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |

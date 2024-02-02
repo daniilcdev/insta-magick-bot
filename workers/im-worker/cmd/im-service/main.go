@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	log.Println("starting im-worker...")
+
 	cfg := config.Load()
 	fsOK := directoryReachable(cfg.InDir()) &&
 		directoryReachable(cfg.OutDir()) && directoryReachable(cfg.TempDir())
@@ -44,10 +46,10 @@ func directoryReachable(dir string) bool {
 
 	switch {
 	case os.IsNotExist(err):
-		log.Println(err)
+		log.Printf("%s - %v\n", dir, err)
 		return false
 	case err != nil:
-		log.Println(err)
+		log.Printf("%s - %v\n", dir, err)
 		return false
 	default:
 		return true
