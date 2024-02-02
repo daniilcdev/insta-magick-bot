@@ -11,6 +11,7 @@ on:
 env:
   GOOS: linux
   GOARCH: arm64
+  DOCKER_LOCAL_MOUNT: ${{secrets.LOCAL_MOUNT}}
 
 jobs:
   build:
