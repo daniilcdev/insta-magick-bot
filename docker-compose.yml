@@ -19,6 +19,7 @@ services:
   nats:
     image: nats
     container_name: nats
+    restart: always
     ports:
       - 4222:4222
       - 8222:8222
@@ -28,6 +29,7 @@ services:
   im-worker:
     build: ./workers/im-worker/
     container_name: im-worker
+    restart: always
     depends_on:
       - nats
     volumes:
