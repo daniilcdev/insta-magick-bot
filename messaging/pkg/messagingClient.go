@@ -22,13 +22,10 @@ type natsClient struct {
 }
 
 func InitMessageQueue() MessagingClient {
-	ns, err := nats.Connect(nats.DefaultURL)
+	ns, err := nats.Connect("nats:4222")
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	// ns.Subscribe(internal.WorkFailed, onFailed)
-	// ns.Subscribe(internal.WorkDone, onDone)
 
 	mq := &natsClient{
 		ns:   ns,

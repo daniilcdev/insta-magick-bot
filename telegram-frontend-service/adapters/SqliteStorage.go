@@ -46,6 +46,7 @@ func OpenStorageConnection(cfg *config.AppConfig) (*SqliteStorage, error) {
 func (s *SqliteStorage) FilterNames() []string {
 	names, err := s.q.GetNames(context.Background())
 	if err != nil {
+		log.Default().Printf("can't get names: '%v'\n", err)
 		return []string{}
 	}
 
