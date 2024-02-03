@@ -29,16 +29,14 @@ services:
   im-worker:
     build: ./workers/im-worker/
     container_name: im-worker
-    restart: always
     depends_on:
       - nats
     volumes:
       - ${DOCKER_LOCAL_MOUNT}:/home/im-worker:rw
     deploy:
       restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
+        condition: unless-stopped
+        delay: 10s
     networks:
       - "nats"
 
