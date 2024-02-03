@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   database:
-    image: "postgres"
+    image: "postgres:16"
     restart: "always"
     container_name: postgres
     env_file: .env
@@ -9,13 +9,39 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASS}
       - POSTGRES_DB=${DB_NAME}
-    volumes: 
+    volumes:
       - ${DOCKER_LOCAL_VOLUME}:${DOCKER_DB_VOLUME}
     networks:
       - "postgres"
     ports:
       - 5432:5432
 
+  nats:
+    image: nats
+    container_name: nats
+    ports:
+      - 4222:4222
+      - 8222:8222
+    networks:
+      - "nats"
+
+  im-worker:
+    build: ./workers/im-worker/
+    container_name: im-worker
+    depends_on:
+      - nats
+    volumes:
+      - ${DOCKER_LOCAL_MOUNT}:/home/im-worker:rw
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    networks:
+      - "nats"
+
 networks:
   postgres:
     driver: "bridge"
+  nats:
+    name: "nats"

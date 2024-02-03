@@ -5,15 +5,12 @@ name: Build&Deploy
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
+  # push:
+  #   branches: [ "main" ]
 
 env:
   GOOS: linux
   GOARCH: arm64
-  CGO_ENABLED: 1
-  CC: aarch64-linux-gnu-gcc
-  CXX: aarch64-linux-gnu-g++
 
 jobs:
   build:
@@ -28,17 +25,7 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: Build
-      run: go build -o=./imbot -v .
-
-    - name: Test
-      run: go test -v ./...
-  
-  deploy:
-    runs-on: self-hosted
-    needs: build
-    steps:
-    - name: Deploy Containers
+    - name: Create Env file
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         echo "DB_USER="${{secrets.DB_USER}} > .env && \
@@ -46,9 +33,33 @@ jobs:
         echo "DB_NAME="${{secrets.DB_NAME}} >> .env && \
         echo "DOCKER_DB_VOLUME="${{secrets.DOCKER_DB_VOLUME}} >> .env && \
         echo "DOCKER_LOCAL_VOLUME="${{secrets.DOCKER_LOCAL_VOLUME}} >> .env && \
-        sudo docker compose up -d
+        echo "DOCKER_LOCAL_MOUNT="${{secrets.LOCAL_MOUNT}} >> .env
 
-    - name: Deploy Imbot
+    - name: Test
+      run: go test -v ./...
+
+    - name: Build Imbot (Legacy)
+      run: go build -o=./imbot -v .    
+
+    - name: Boot MQ
+      run: sudo docker compose up -d nats
+
+    - name: Boot Im-Worker
+      working-directory: ./workers/im-worker 
+      run: ./scripts/build-wrapper.sh    
+  
+  deploy:
+    runs-on: self-hosted
+    needs: build
+    steps:
+    - name: Deploy Postgres Container
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: sudo docker compose up -d database
+
+    - name: Deploy Im-Worker
+      run: sudo docker compose up -d im-worker --build
+
+    - name: Deploy Imbot Container
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up

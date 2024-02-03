@@ -5,32 +5,40 @@ import (
 	"fmt"
 	"path"
 
+	scheduler "github.com/daniilcdev/insta-magick-bot/client/telegram/pkg"
+	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
-type ReplyToPhotoHandler struct {
-	imageLoader *imageWebLoader
-	log         Logger
+type replyToPhotoHandler struct {
+	scheduler scheduler.WorkScheduler
+	storage   Storage
+	log       Logger
 }
 
-func NewReplyToPhoto() *ReplyToPhotoHandler {
-	return &ReplyToPhotoHandler{
+func NewReplyToPhoto() *replyToPhotoHandler {
+	return &replyToPhotoHandler{
 		log: &nopLoggerAdapter{},
 	}
 }
 
-func (h *ReplyToPhotoHandler) WithLogger(log Logger) *ReplyToPhotoHandler {
+func (h *replyToPhotoHandler) WithLogger(log Logger) *replyToPhotoHandler {
 	h.log = log
 	return h
 }
 
-func (h *ReplyToPhotoHandler) WithImageLoader(loader *imageWebLoader) *ReplyToPhotoHandler {
-	h.imageLoader = loader
+func (h *replyToPhotoHandler) WithScheduler(scheduler scheduler.WorkScheduler) *replyToPhotoHandler {
+	h.scheduler = scheduler
 	return h
 }
 
-func (h *ReplyToPhotoHandler) WillHandle(update *models.Update) bool {
+func (h *replyToPhotoHandler) WithStorage(storage Storage) *replyToPhotoHandler {
+	h.storage = storage
+	return h
+}
+
+func (h *replyToPhotoHandler) WillHandle(update *models.Update) bool {
 	msg := update.Message
 	switch {
 	case msg == nil:
@@ -42,11 +50,11 @@ func (h *ReplyToPhotoHandler) WillHandle(update *models.Update) bool {
 	}
 }
 
-func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *models.Update) {
+func (h *replyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	msg := update.Message.ReplyToMessage
 
 	filterName := getFilterNameFromTextEntities(update.Message)
-	filter, err := h.imageLoader.storage.FindFilter(filterName)
+	filter, err := h.storage.FindFilter(filterName)
 
 	if err != nil {
 		h.log.ErrStr(fmt.Sprintf("failed to find filter %s", filterName))
@@ -88,23 +96,18 @@ func (h *ReplyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 
 	params := tg.GetFileParams{}
 	params.FileID = fileId
-	file, err := bot.GetFile(ctx, &params)
-	if err != nil {
+	if file, err := bot.GetFile(ctx, &params); err != nil {
 		bot.SendMessage(ctx, &tg.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
 			Text:   "Oops!\n" + err.Error(),
-		},
-		)
-		return
+		})
+	} else {
+		dlLink := bot.FileDownloadLink(file)
+		h.scheduler.Schedule(types.Work{
+			File:        file.FileID + path.Ext(dlLink),
+			RequesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
+			Filter:      types.Instructions(filter.Receipt),
+			URL:         dlLink,
+		})
 	}
-
-	dlLink := bot.FileDownloadLink(file)
-	dlParams := downloadParams{
-		url:         dlLink,
-		outFilename: file.FileID + path.Ext(dlLink),
-		requesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
-		filter:      filter.Name,
-	}
-
-	go h.imageLoader.downloadPhoto(dlParams)
 }

@@ -1,3 +1,6 @@
 [Rr]es/
 [Ee]nv/[Pp]rivate/
 db/
+
+.env
+_volume/

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
 
+	pkg "github.com/daniilcdev/insta-magick-bot/client/telegram/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
@@ -14,23 +14,19 @@ import (
 type TelegramClient struct {
 	log         Logger
 	bot         *tg.Bot
-	imgLoader   *imageWebLoader
+	scheduler   pkg.WorkScheduler
 	ctx         context.Context
 	filtersPool []string
-	cfg         BotConfig
+	cfg         pkg.BotConfig
 }
 
-func NewBotClient(ctx context.Context, cfg BotConfig) *TelegramClient {
+func NewBotClient(ctx context.Context, cfg pkg.BotConfig) *TelegramClient {
 	tgc := TelegramClient{
 		log: &nopLoggerAdapter{},
 		cfg: cfg,
 	}
 
 	tgc.ctx = ctx
-	tgc.imgLoader = &imageWebLoader{
-		outDir: cfg.DownloadDir(),
-	}
-
 	return &tgc
 }
 
@@ -56,17 +52,17 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 	return tc
 }
 
+func (tc *TelegramClient) WithWorkScheduler(scheduler pkg.WorkScheduler) *TelegramClient {
+	tc.scheduler = scheduler
+	return tc
+}
+
 func (tc *TelegramClient) WithLogger(logger Logger) *TelegramClient {
 	tc.log = logger
 	return tc
 }
 
-func (tc *TelegramClient) WithStorage(storage Storage) *TelegramClient {
-	tc.imgLoader.storage = storage
-	return tc
-}
-
-func (tc *TelegramClient) Start() {
+func (tc *TelegramClient) Start(storage Storage) {
 	if tc.bot == nil {
 		panic("can't start client - bot wasn't set")
 	}
@@ -77,7 +73,8 @@ func (tc *TelegramClient) Start() {
 
 	replyHandler := NewReplyToPhoto().
 		WithLogger(tc.log).
-		WithImageLoader(tc.imgLoader)
+		WithStorage(storage).
+		WithScheduler(tc.scheduler)
 
 	tc.bot.RegisterHandlerMatchFunc(replyHandler.WillHandle, replyHandler.Handle)
 
@@ -90,22 +87,6 @@ func (tc *TelegramClient) WithFiltersPool(pool []string) *TelegramClient {
 	return tc
 }
 
-func (tc *TelegramClient) SendPhoto(wg *sync.WaitGroup, chatId any, inputFile models.InputFile) {
-	defer wg.Done()
-
-	params := &tg.SendPhotoParams{
-		ChatID: chatId,
-		Photo:  inputFile,
-	}
-
-	_, err := tc.bot.SendPhoto(tc.ctx, params)
-
-	if err != nil {
-		tc.log.ErrStr(fmt.Sprintf("failed to send image back %v", err))
-		return
-	}
-}
-
 func (tc *TelegramClient) startHandler(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	bot.SendMessage(ctx, &tg.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
@@ -116,4 +97,15 @@ func (tc *TelegramClient) startHandler(ctx context.Context, bot *tg.Bot, update 
 Чтобы узнать доступные фильтры,
 используйте команду /filters`,
 	})
+}
+
+func (tc *TelegramClient) sendPhoto(chatId string, inputFile models.InputFile) {
+	params := &tg.SendPhotoParams{
+		ChatID: chatId,
+		Photo:  inputFile,
+	}
+
+	if _, err := tc.bot.SendPhoto(tc.ctx, params); err != nil {
+		tc.log.ErrStr(fmt.Sprintf("failed to send image back %v", err))
+	}
 }
