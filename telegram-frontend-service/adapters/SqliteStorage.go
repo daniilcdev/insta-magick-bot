@@ -6,9 +6,9 @@ import (
 	"errors"
 	"log"
 
-	"github.com/daniilcdev/insta-magick-bot/client/telegram"
-	"github.com/daniilcdev/insta-magick-bot/config"
 	"github.com/daniilcdev/insta-magick-bot/generated/queries"
+	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/config"
+	telegram "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 	_ "github.com/lib/pq"
 )
 

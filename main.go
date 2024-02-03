@@ -6,11 +6,11 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/daniilcdev/insta-magick-bot/adapters"
-	"github.com/daniilcdev/insta-magick-bot/client/telegram"
-	"github.com/daniilcdev/insta-magick-bot/config"
 	"github.com/daniilcdev/insta-magick-bot/internal"
 	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
+	adapters "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/adapters"
+	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/config"
+	telegram "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 )
 

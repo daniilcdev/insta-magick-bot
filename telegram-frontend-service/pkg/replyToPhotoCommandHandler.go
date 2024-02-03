@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"path"
 
-	scheduler "github.com/daniilcdev/insta-magick-bot/client/telegram/pkg"
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
 type replyToPhotoHandler struct {
-	scheduler scheduler.WorkScheduler
+	scheduler WorkScheduler
 	storage   Storage
 	log       Logger
 }
@@ -28,7 +27,7 @@ func (h *replyToPhotoHandler) WithLogger(log Logger) *replyToPhotoHandler {
 	return h
 }
 
-func (h *replyToPhotoHandler) WithScheduler(scheduler scheduler.WorkScheduler) *replyToPhotoHandler {
+func (h *replyToPhotoHandler) WithScheduler(scheduler WorkScheduler) *replyToPhotoHandler {
 	h.scheduler = scheduler
 	return h
 }

@@ -1,6 +1,6 @@
 package adapters
 
-import "github.com/daniilcdev/insta-magick-bot/client/telegram"
+import telegram "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 
 type LogBuilder interface {
 	telegram.Logger

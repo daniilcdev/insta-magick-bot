@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	pkg "github.com/daniilcdev/insta-magick-bot/client/telegram/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
@@ -14,13 +13,13 @@ import (
 type TelegramClient struct {
 	log         Logger
 	bot         *tg.Bot
-	scheduler   pkg.WorkScheduler
+	scheduler   WorkScheduler
 	ctx         context.Context
 	filtersPool []string
-	cfg         pkg.BotConfig
+	cfg         BotConfig
 }
 
-func NewBotClient(ctx context.Context, cfg pkg.BotConfig) *TelegramClient {
+func NewBotClient(ctx context.Context, cfg BotConfig) *TelegramClient {
 	tgc := TelegramClient{
 		log: &nopLoggerAdapter{},
 		cfg: cfg,
@@ -52,7 +51,7 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 	return tc
 }
 
-func (tc *TelegramClient) WithWorkScheduler(scheduler pkg.WorkScheduler) *TelegramClient {
+func (tc *TelegramClient) WithWorkScheduler(scheduler WorkScheduler) *TelegramClient {
 	tc.scheduler = scheduler
 	return tc
 }
