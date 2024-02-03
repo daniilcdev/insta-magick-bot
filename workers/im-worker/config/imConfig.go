@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -29,7 +30,10 @@ func (c *imConfig) TempDir() string {
 }
 
 func Load() IMConfig {
-	godotenv.Load("./config/env/imagemagick.env")
+	err := godotenv.Load("./config/env/imagemagick.env")
+	if err != nil {
+		log.Printf("env loading failed: '%v'\n", err)
+	}
 
 	return &imConfig{
 		in:  os.Getenv("IM_IN_DIR"),

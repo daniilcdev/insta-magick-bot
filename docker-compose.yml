@@ -30,6 +30,8 @@ services:
     container_name: im-worker
     depends_on:
       - nats
+    volumes:
+      - ${DOCKER_LOCAL_MOUNT}:/home/im-worker:rw
     deploy:
       restart_policy:
         condition: on-failure
