@@ -5,34 +5,35 @@ import (
 	"fmt"
 	"path"
 
+	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
+	pkg "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
+
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
 type replyToPhotoHandler struct {
-	scheduler WorkScheduler
-	storage   Storage
-	log       Logger
+	scheduler pkg.WorkScheduler
+	storage   pkg.Storage
+	log       logging.Logger
 }
 
 func NewReplyToPhoto() *replyToPhotoHandler {
-	return &replyToPhotoHandler{
-		log: &nopLoggerAdapter{},
-	}
+	return &replyToPhotoHandler{}
 }
 
-func (h *replyToPhotoHandler) WithLogger(log Logger) *replyToPhotoHandler {
+func (h *replyToPhotoHandler) WithLogger(log logging.Logger) *replyToPhotoHandler {
 	h.log = log
 	return h
 }
 
-func (h *replyToPhotoHandler) WithScheduler(scheduler WorkScheduler) *replyToPhotoHandler {
+func (h *replyToPhotoHandler) WithScheduler(scheduler pkg.WorkScheduler) *replyToPhotoHandler {
 	h.scheduler = scheduler
 	return h
 }
 
-func (h *replyToPhotoHandler) WithStorage(storage Storage) *replyToPhotoHandler {
+func (h *replyToPhotoHandler) WithStorage(storage pkg.Storage) *replyToPhotoHandler {
 	h.storage = storage
 	return h
 }

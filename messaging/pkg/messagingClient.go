@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 
-	"github.com/daniilcdev/insta-magick-bot/internal"
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	"github.com/nats-io/nats.go"
 )
@@ -44,7 +43,7 @@ func (mq *natsClient) Schedule(work types.Work) error {
 		return err
 	}
 
-	if err := mq.ns.Publish(internal.WorkCreated, data); err != nil {
+	if err := mq.ns.Publish(WorkCreated, data); err != nil {
 		log.Printf("failed to publish: '%v'\n", work)
 		return err
 	}

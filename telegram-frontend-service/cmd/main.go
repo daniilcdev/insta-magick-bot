@@ -6,10 +6,11 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/daniilcdev/insta-magick-bot/internal"
 	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
-	adapters "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/adapters"
 	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/config"
+	handlers "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/handlers"
+	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
+	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/storage"
 	telegram "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 )
@@ -19,11 +20,11 @@ func main() {
 	defer mq.Close()
 
 	workDone := make(chan *types.Work)
-	mq.Notify(internal.WorkDone, workDone)
+	mq.Notify(messaging.WorkDone, workDone)
 	defer close(workDone)
 
 	cfg := config.LoadConfig()
-	db, err := adapters.OpenStorageConnection(cfg)
+	db, err := storage.OpenStorageConnection(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,16 +33,42 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	botClient := telegram.NewBotClient(ctx, cfg).
+	logger := logging.NewLogger().WithTag("BotClient")
+	botClient := telegram.NewBotClient(cfg).
 		WithToken(cfg.BotToken()).
-		WithFiltersPool(db.FilterNames()).
-		WithLogger(adapters.NewLogger().WithTag("BotClient")).
+		WithLogger(logger).
 		WithWorkScheduler(mq)
 
-	go botClient.ListenResult(workDone)
-	go botClient.Start(db)
+	go botClient.ListenResult(ctx, workDone)
+
+	h := getHandlers(logger, db, mq)
+	go botClient.Start(
+		ctx,
+		h...,
+	)
 
 	waitForExit()
+}
+
+func getHandlers(
+	logger logging.Logger,
+	db telegram.Storage,
+	mq telegram.WorkScheduler,
+) []telegram.CommandHandler {
+	h := []telegram.CommandHandler{
+		handlers.NewPhotoMessageHandler(),
+		handlers.NewReplyToPhoto().
+			WithLogger(logger).
+			WithStorage(db).
+			WithScheduler(mq),
+
+		handlers.
+			NewListFiltersHandler().
+			WithStorage(db).
+			WithLogger(logger),
+	}
+
+	return h
 }
 
 func waitForExit() {

@@ -1,24 +1,25 @@
 package telegram
 
 import (
+	"context"
 	"os"
 
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	"github.com/go-telegram/bot/models"
 )
 
-func (sb *TelegramClient) ListenResult(result chan *types.Work) {
+func (sb *TelegramClient) ListenResult(ctx context.Context, result chan *types.Work) {
 	for {
 		select {
 		case work := <-result:
-			sb.do(work)
-		case <-sb.ctx.Done():
+			sb.do(ctx, work)
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (sb *TelegramClient) do(work *types.Work) {
+func (sb *TelegramClient) do(ctx context.Context, work *types.Work) {
 	if work == nil {
 		return
 	}
@@ -31,7 +32,7 @@ func (sb *TelegramClient) do(work *types.Work) {
 	}
 	defer f.Close()
 
-	sb.sendPhoto(work.RequesterId, &models.InputFileUpload{
+	sb.sendPhoto(ctx, work.RequesterId, &models.InputFileUpload{
 		Filename: work.RequesterId,
 		Data:     f,
 	})

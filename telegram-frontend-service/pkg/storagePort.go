@@ -5,6 +5,7 @@ import (
 )
 
 type Storage interface {
+	FilterNames() []string
 	CreateRequest(newRequest *NewRequest)
 
 	Schedule(limit int64) []queries.SchedulePendingRow
