@@ -1,5 +1,4 @@
 #!/bin/bash
-
 source ../.env
 
 go build -o=$DOCKER_LOCAL_MOUNT/telegram-service -v ./cmd/
