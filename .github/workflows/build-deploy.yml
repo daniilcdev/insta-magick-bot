@@ -28,26 +28,26 @@ jobs:
     - name: Create Env file
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-        echo "DB_USER="${{secrets.DB_USER}} > .env && \
+        echo "CWD="${{env.GITHUB_WORKSPACE}} > .env && \
+        echo "DB_USER="${{secrets.DB_USER}} >> .env && \
         echo "DB_PASS="${{secrets.DB_PASS}} >> .env && \
         echo "DB_NAME="${{secrets.DB_NAME}} >> .env && \
         echo "DOCKER_DB_VOLUME="${{secrets.DOCKER_DB_VOLUME}} >> .env && \
         echo "DOCKER_LOCAL_VOLUME="${{secrets.DOCKER_LOCAL_VOLUME}} >> .env && \
-        echo "DOCKER_LOCAL_MOUNT="${{secrets.LOCAL_MOUNT}} >> .env
+        echo "DOCKER_LOCAL_MOUNT="${{secrets.LOCAL_MOUNT}} >> .env && \
+        echo "TELEGRAM_TOKEN="${{secrets.TELEGRAM_TOKEN}} >> .env
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v ./...    
 
-    - name: Build Imbot (Legacy)
-      run: go build -o=./imbot -v .    
+    - name: Build Im-Worker
+      working-directory: ./workers/im-worker
+      run: ./scripts/build-wrapper.sh
 
-    - name: Boot MQ
-      run: sudo docker compose up -d nats
+    - name: Build Im-Worker
+      working-directory: ./telegram-frontend-service
+      run: ./scripts/build-wrapper.sh
 
-    - name: Boot Im-Worker
-      working-directory: ./workers/im-worker 
-      run: ./scripts/build-wrapper.sh    
-  
   deploy:
     runs-on: self-hosted
     needs: build
@@ -56,13 +56,15 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: sudo docker compose up -d database
 
+    - name: Boot MQ
+      run: sudo docker compose up -d nats
+
+    - name: Run migrations
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up
+
     - name: Deploy Im-Worker
       run: sudo docker compose up -d im-worker --build
 
-    - name: Deploy Imbot Container
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: |
-        goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up
-        sudo systemctl stop imbot
-        mv imbot ${{secrets.RUNTIME_DIRECTORY}}/imbot
-        sudo systemctl start imbot
+    - name: Deploy Telegram Service
+      run: sudo docker compose up -d telegram-service --build    
