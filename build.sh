@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cp .env back.env
+mv .env back.env
 
 echo PWD=`pwd` > .env
 cat back.env >> .env
