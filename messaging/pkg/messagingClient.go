@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
+	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 	"github.com/nats-io/nats.go"
 )
 

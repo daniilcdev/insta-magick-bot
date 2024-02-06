@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	mq "github.com/daniilcdev/insta-magick-bot/workers/im-worker/cmd/im-service-mq"
-	"github.com/daniilcdev/insta-magick-bot/workers/im-worker/config"
+	mq "github.com/daniilcdev/insta-magick-bot/image-service-worker/cmd/im-service-mq"
+	"github.com/daniilcdev/insta-magick-bot/image-service-worker/config"
 )
 
 func main() {

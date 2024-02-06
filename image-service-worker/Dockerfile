@@ -4,5 +4,5 @@ RUN apt-get update && \
     apt-get install -y imagemagick ca-certificates && \
     apt-get autoremove
 
-WORKDIR /home/im-worker/
-ENTRYPOINT [ "./im-worker" ]
+WORKDIR /home/image-service-worker/
+ENTRYPOINT [ "./image-service-worker" ]

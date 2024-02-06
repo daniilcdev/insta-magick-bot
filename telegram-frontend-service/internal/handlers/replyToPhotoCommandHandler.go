@@ -8,7 +8,7 @@ import (
 	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
 	pkg "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
+	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )

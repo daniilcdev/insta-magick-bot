@@ -6,13 +6,13 @@ import (
 	"os"
 	"os/signal"
 
+	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
 	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/config"
 	handlers "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/handlers"
 	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
 	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/storage"
 	telegram "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 )
 
 func main() {

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 
+	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 
 	"github.com/nats-io/nats.go"
 )

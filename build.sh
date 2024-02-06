@@ -6,9 +6,9 @@ echo CWD=`pwd` > .env
 cat back.env >> .env
 
 # build and up worker
-cd ./workers/im-worker
+cd ./image-service-worker
 ./scripts/build-wrapper.sh
-cd ../../
+cd ../
 
 cd ./telegram-frontend-service
 ./scripts/build-wrapper.sh

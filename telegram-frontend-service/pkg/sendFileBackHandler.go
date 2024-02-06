@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
+	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 	"github.com/go-telegram/bot/models"
 )
 

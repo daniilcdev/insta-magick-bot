@@ -40,8 +40,8 @@ jobs:
     - name: Test
       run: go test -v ./...    
 
-    - name: Build Im-Worker
-      working-directory: ./workers/im-worker
+    - name: Build Image Service Worker
+      working-directory: ./image-service-worker
       run: ./scripts/build-wrapper.sh
 
     - name: Build Telegram Service
@@ -63,8 +63,8 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: goose -dir=schemas postgres "user=${{secrets.DB_USER}} password=${{secrets.DB_PASS}} dbname=${{secrets.DB_NAME}} ${{secrets.DB_EXTRA}}" up
 
-    - name: Deploy Im-Worker
-      run: sudo docker compose up -d im-worker --build
+    - name: Deploy Image Service Worker
+      run: sudo docker compose up -d image-service-worker --build
 
     - name: Deploy Telegram Service
       run: sudo docker compose up -d telegram-service --build    

@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/daniilcdev/insta-magick-bot/workers/im-worker/config"
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
+	"github.com/daniilcdev/insta-magick-bot/image-service-worker/config"
+	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 )
 
 type IMProcessor struct {
