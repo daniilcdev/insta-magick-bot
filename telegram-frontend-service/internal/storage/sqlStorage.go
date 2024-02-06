@@ -1,4 +1,4 @@
-package adapters
+package storage
 
 import (
 	"context"
@@ -6,13 +6,13 @@ import (
 	"errors"
 	"log"
 
-	"github.com/daniilcdev/insta-magick-bot/client/telegram"
-	"github.com/daniilcdev/insta-magick-bot/config"
 	"github.com/daniilcdev/insta-magick-bot/generated/queries"
+	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/config"
+	pkg "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 	_ "github.com/lib/pq"
 )
 
-type SqliteStorage struct {
+type sqlStorage struct {
 	db *sql.DB
 	q  *queries.Queries
 }
@@ -25,7 +25,7 @@ var (
 	Completed  requestStatus = "Completed"
 )
 
-func OpenStorageConnection(cfg *config.AppConfig) (*SqliteStorage, error) {
+func OpenStorageConnection(cfg *config.AppConfig) (*sqlStorage, error) {
 	db, err := sql.Open(cfg.DbDriver(), cfg.DbConn())
 	if err != nil {
 		return nil, err
@@ -40,19 +40,20 @@ func OpenStorageConnection(cfg *config.AppConfig) (*SqliteStorage, error) {
 
 	q := queries.New(db)
 
-	return &SqliteStorage{db: db, q: q}, nil
+	return &sqlStorage{db: db, q: q}, nil
 }
 
-func (s *SqliteStorage) FilterNames() []string {
+func (s *sqlStorage) FilterNames() []string {
 	names, err := s.q.GetNames(context.Background())
 	if err != nil {
+		log.Default().Printf("can't get names: '%v'\n", err)
 		return []string{}
 	}
 
 	return names
 }
 
-func (s *SqliteStorage) CreateRequest(newRequest *telegram.NewRequest) {
+func (s *sqlStorage) CreateRequest(newRequest *pkg.NewRequest) {
 	err := s.q.CreateRequest(
 		context.Background(),
 		queries.CreateRequestParams{
@@ -65,7 +66,7 @@ func (s *SqliteStorage) CreateRequest(newRequest *telegram.NewRequest) {
 	reportErr(err)
 }
 
-func (s *SqliteStorage) Schedule(limit int64) []queries.SchedulePendingRow {
+func (s *sqlStorage) Schedule(limit int64) []queries.SchedulePendingRow {
 	rows, err := s.q.SchedulePending(context.Background(), limit)
 	if err != nil {
 		log.Printf("[ERROR] (Schedule) - '%v'\n", err)
@@ -75,7 +76,7 @@ func (s *SqliteStorage) Schedule(limit int64) []queries.SchedulePendingRow {
 	return rows
 }
 
-func (s *SqliteStorage) GetCompleted() []queries.GetRequestsInStatusRow {
+func (s *sqlStorage) GetCompleted() []queries.GetRequestsInStatusRow {
 	rows, err := s.q.GetRequestsInStatus(context.Background(), string(Completed))
 	if err != nil {
 		log.Printf("[ERROR] (GetCompleted) - '%v'\n", err)
@@ -85,13 +86,13 @@ func (s *SqliteStorage) GetCompleted() []queries.GetRequestsInStatusRow {
 	return rows
 }
 
-func (s *SqliteStorage) RemoveCompleted() {
+func (s *sqlStorage) RemoveCompleted() {
 	err := s.q.DeleteRequestsInStatus(context.Background(), string(Completed))
 	reportErr(err)
 
 }
 
-func (s *SqliteStorage) CompleteRequests(files []string) {
+func (s *sqlStorage) CompleteRequests(files []string) {
 	args := queries.UpdateRequestsStatusParams{
 		Filenames: files,
 		Status:    string(Completed),
@@ -101,7 +102,7 @@ func (s *SqliteStorage) CompleteRequests(files []string) {
 
 }
 
-func (s *SqliteStorage) FindFilter(name string) (filter queries.Filter, err error) {
+func (s *sqlStorage) FindFilter(name string) (filter queries.Filter, err error) {
 	switch name {
 	case "":
 		err = errors.New("filter name is empty")
@@ -114,7 +115,7 @@ func (s *SqliteStorage) FindFilter(name string) (filter queries.Filter, err erro
 	}
 }
 
-func (s *SqliteStorage) Rollback(files []string) {
+func (s *sqlStorage) Rollback(files []string) {
 	err := s.q.UpdateRequestsStatus(context.Background(), queries.UpdateRequestsStatusParams{
 		Filenames: files,
 		Status:    string(Pending),
@@ -122,7 +123,7 @@ func (s *SqliteStorage) Rollback(files []string) {
 	reportErr(err)
 }
 
-func (s *SqliteStorage) Close() error {
+func (s *sqlStorage) Close() error {
 	defer func() {
 		log.Println("db connection closed")
 	}()

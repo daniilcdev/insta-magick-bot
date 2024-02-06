@@ -1,9 +1,14 @@
-package adapters
+package logging
 
-import "github.com/daniilcdev/insta-magick-bot/client/telegram"
+type Logger interface {
+	Info(msg string)
+	Warn(msg string)
+	ErrStr(msg string)
+	Err(err error)
+}
 
 type LogBuilder interface {
-	telegram.Logger
+	Logger
 	WithTag(tag string) LogBuilder
 }
 

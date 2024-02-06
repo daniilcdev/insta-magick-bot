@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/daniilcdev/insta-magick-bot/internal"
+	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 
 	"github.com/nats-io/nats.go"
@@ -24,7 +24,7 @@ func (wr *MQWorkReceiver) StartReceiving() {
 	}
 
 	wr.nc = nc
-	_, err = nc.Subscribe(internal.WorkCreated, wr.onWorkCreated)
+	_, err = nc.Subscribe(messaging.WorkCreated, wr.onWorkCreated)
 	if err != nil {
 		log.Fatalf("failed to subscribe: topic '%s'\n", err)
 	}
@@ -69,7 +69,7 @@ func (wr *MQWorkReceiver) done(work types.Work) {
 		return
 	}
 
-	wr.nc.Publish(internal.WorkDone, data)
+	wr.nc.Publish(messaging.WorkDone, data)
 }
 
 func (wr *MQWorkReceiver) failed(work types.Work) {
@@ -79,5 +79,5 @@ func (wr *MQWorkReceiver) failed(work types.Work) {
 		return
 	}
 
-	wr.nc.Publish(internal.WorkFailed, data)
+	wr.nc.Publish(messaging.WorkFailed, data)
 }

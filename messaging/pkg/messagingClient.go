@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 
-	"github.com/daniilcdev/insta-magick-bot/internal"
 	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	"github.com/nats-io/nats.go"
 )
@@ -22,13 +21,10 @@ type natsClient struct {
 }
 
 func InitMessageQueue() MessagingClient {
-	ns, err := nats.Connect(nats.DefaultURL)
+	ns, err := nats.Connect("nats:4222")
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	// ns.Subscribe(internal.WorkFailed, onFailed)
-	// ns.Subscribe(internal.WorkDone, onDone)
 
 	mq := &natsClient{
 		ns:   ns,
@@ -47,7 +43,7 @@ func (mq *natsClient) Schedule(work types.Work) error {
 		return err
 	}
 
-	if err := mq.ns.Publish(internal.WorkCreated, data); err != nil {
+	if err := mq.ns.Publish(WorkCreated, data); err != nil {
 		log.Printf("failed to publish: '%v'\n", work)
 		return err
 	}

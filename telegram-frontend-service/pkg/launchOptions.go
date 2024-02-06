@@ -1,6 +1,6 @@
 package telegram
 
-type BotConfig interface {
+type LaunchOptions interface {
 	BotToken() string
 	ResultsDir() string
 }

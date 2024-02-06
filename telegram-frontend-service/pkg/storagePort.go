@@ -1,14 +1,11 @@
 package telegram
 
-import "github.com/daniilcdev/insta-magick-bot/generated/queries"
-
-type NewRequest struct {
-	File        string
-	RequesterId string
-	Filter      string
-}
+import (
+	"github.com/daniilcdev/insta-magick-bot/generated/queries"
+)
 
 type Storage interface {
+	FilterNames() []string
 	CreateRequest(newRequest *NewRequest)
 
 	Schedule(limit int64) []queries.SchedulePendingRow

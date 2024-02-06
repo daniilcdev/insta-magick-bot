@@ -1,6 +1,4 @@
-[Rr]es/
-[Ee]nv/[Pp]rivate/
-db/
+[Tt]elegram-[Ff]rontend-[Ss]ervice/[Cc]onfig/[Ee]nv/[Pp]rivate/
 
 .env
 _volume/
