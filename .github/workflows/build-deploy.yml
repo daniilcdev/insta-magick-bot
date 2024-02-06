@@ -44,7 +44,7 @@ jobs:
       working-directory: ./workers/im-worker
       run: ./scripts/build-wrapper.sh
 
-    - name: Build Im-Worker
+    - name: Build Telegram Service
       working-directory: ./telegram-frontend-service
       run: ./scripts/build-wrapper.sh
 
