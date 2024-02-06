@@ -5,19 +5,18 @@ import (
 	"io"
 	"log"
 
-	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 	"github.com/nats-io/nats.go"
 )
 
 type MessagingClient interface {
 	io.Closer
-	Schedule(work types.Work) error
-	Notify(topic string, ch chan *types.Work)
+	Schedule(work Work) error
+	Notify(topic string, ch chan *Work)
 }
 
 type natsClient struct {
 	ns   *nats.Conn
-	subs map[string][]chan *types.Work
+	subs map[string][]chan *Work
 }
 
 func InitMessageQueue() MessagingClient {
@@ -28,7 +27,7 @@ func InitMessageQueue() MessagingClient {
 
 	mq := &natsClient{
 		ns:   ns,
-		subs: make(map[string][]chan *types.Work),
+		subs: make(map[string][]chan *Work),
 	}
 
 	log.Println("mq initialized")
@@ -36,7 +35,7 @@ func InitMessageQueue() MessagingClient {
 	return mq
 }
 
-func (mq *natsClient) Schedule(work types.Work) error {
+func (mq *natsClient) Schedule(work Work) error {
 	data, err := json.Marshal(work)
 	if err != nil {
 		log.Printf("failed to submit: '%v'\n", work)
@@ -51,11 +50,11 @@ func (mq *natsClient) Schedule(work types.Work) error {
 	return nil
 }
 
-func (mq *natsClient) Notify(topic string, receiver chan *types.Work) {
+func (mq *natsClient) Notify(topic string, receiver chan *Work) {
 	if channels, ok := mq.subs[topic]; ok {
 		mq.subs[topic] = append(channels, receiver)
 	} else {
-		channels = make([]chan *types.Work, 0, 4)
+		channels = make([]chan *Work, 0, 4)
 		mq.subs[topic] = append(channels, receiver)
 		mq.ns.Subscribe(topic, mq.handleMessage)
 	}
@@ -85,8 +84,8 @@ func (mq *natsClient) handleMessage(msg *nats.Msg) {
 	}
 }
 
-func getWork(msg *nats.Msg) (*types.Work, error) {
-	var work types.Work
+func getWork(msg *nats.Msg) (*Work, error) {
+	var work Work
 	err := json.Unmarshal(msg.Data, &work)
 	return &work, err
 }

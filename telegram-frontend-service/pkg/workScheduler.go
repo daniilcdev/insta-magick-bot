@@ -1,9 +1,7 @@
 package telegram
 
-import (
-	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
-)
+import messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
 
 type WorkScheduler interface {
-	Schedule(work types.Work) error
+	Schedule(work messaging.Work) error
 }

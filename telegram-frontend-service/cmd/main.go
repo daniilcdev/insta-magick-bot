@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 
-	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
 	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/config"
 	handlers "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/handlers"
@@ -19,7 +18,7 @@ func main() {
 	mq := messaging.InitMessageQueue()
 	defer mq.Close()
 
-	workDone := make(chan *types.Work)
+	workDone := make(chan *messaging.Work)
 	mq.Notify(messaging.WorkDone, workDone)
 	defer close(workDone)
 

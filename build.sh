@@ -16,7 +16,7 @@ cd ../
 
 source .env
 sudo docker compose up -d database --build
-sudo docker compose up -d im-worker --build
+sudo docker compose up -d image-service-worker --build
 sudo docker compose up -d telegram-service --build
 
 goose -dir=schemas postgres "user=$DB_USER password=$DB_PASS dbname=$DB_NAME $DB_EXTRA" up

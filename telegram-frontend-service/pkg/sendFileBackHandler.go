@@ -4,11 +4,11 @@ import (
 	"context"
 	"os"
 
-	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
+	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
 	"github.com/go-telegram/bot/models"
 )
 
-func (sb *TelegramClient) ListenResult(ctx context.Context, result chan *types.Work) {
+func (sb *TelegramClient) ListenResult(ctx context.Context, result chan *messaging.Work) {
 	for {
 		select {
 		case work := <-result:
@@ -19,7 +19,7 @@ func (sb *TelegramClient) ListenResult(ctx context.Context, result chan *types.W
 	}
 }
 
-func (sb *TelegramClient) do(ctx context.Context, work *types.Work) {
+func (sb *TelegramClient) do(ctx context.Context, work *messaging.Work) {
 	if work == nil {
 		return
 	}
