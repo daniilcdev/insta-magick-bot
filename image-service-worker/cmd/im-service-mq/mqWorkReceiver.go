@@ -38,28 +38,20 @@ func (wr *MQWorkReceiver) Close() {
 }
 
 func (wr *MQWorkReceiver) onWorkCreated(msg *nats.Msg) {
-	var err error
-	defer func(msg *nats.Msg) {
-		if err != nil {
-			log.Printf("nak(): '%v'\v", err)
-			msg.Nak()
-		} else {
-			msg.Ack()
-		}
-	}(msg)
-
 	var work types.Work
-	if err = json.Unmarshal(msg.Data, &work); err != nil {
+	if err := json.Unmarshal(msg.Data, &work); err != nil {
 		return
 	}
 
-	if err = wr.W.Do(work); err != nil {
+	if err := wr.W.Do(work); err != nil {
 		log.Printf("work failed: '%v'\n", err)
 		wr.failed(work)
+		msg.Nak()
 		return
 	}
 
 	wr.done(work)
+	msg.Ack()
 }
 
 func (wr *MQWorkReceiver) done(work types.Work) {
