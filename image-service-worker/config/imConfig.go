@@ -7,37 +7,35 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type IMConfig interface {
-	InDir() string
-	OutDir() string
-	TempDir() string
+type WorkerConfig struct {
+	In, Out string
 }
 
-type imConfig struct {
-	in, out, tmp string
-}
-
-func (c *imConfig) InDir() string {
-	return c.in
-}
-
-func (c *imConfig) OutDir() string {
-	return c.out
-}
-
-func (c *imConfig) TempDir() string {
-	return c.out
-}
-
-func Load() IMConfig {
+func Load() (*WorkerConfig, error) {
 	err := godotenv.Load("./config/env/imagemagick.env")
 	if err != nil {
 		log.Printf("env loading failed: '%v'\n", err)
+		return nil, err
 	}
 
-	return &imConfig{
-		in:  os.Getenv("IM_IN_DIR"),
-		out: os.Getenv("IM_OUT_DIR"),
-		tmp: os.Getenv("IM_TEMP_DIR"),
+	cfg := WorkerConfig{
+		In:  os.Getenv("IM_IN_DIR"),
+		Out: os.Getenv("IM_OUT_DIR"),
 	}
+
+	if err := validatePath(cfg.In, cfg.Out); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
+}
+
+func validatePath(paths ...string) error {
+	for _, path := range paths {
+		if _, err := os.Stat(path); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

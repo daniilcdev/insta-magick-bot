@@ -13,25 +13,23 @@ import (
 	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 )
 
-type IMProcessor struct {
-	outDir     string
-	workingDir string
-	inDir      string
+type ImageProcessingWorker struct {
+	inDir  string
+	outDir string
 }
 
-func NewProcessor(cfg config.IMConfig) *IMProcessor {
-	return &IMProcessor{
-		inDir:      cfg.InDir(),
-		outDir:     cfg.OutDir(),
-		workingDir: "./res/tmp/",
+func NewProcessor(cfg *config.WorkerConfig) *ImageProcessingWorker {
+	return &ImageProcessingWorker{
+		inDir:  cfg.In,
+		outDir: cfg.Out,
 	}
 }
 
-func (im *IMProcessor) Do(work types.Work) error {
+func (im *ImageProcessingWorker) Do(work types.Work) error {
 	return im.doNow(&work)
 }
 
-func (im *IMProcessor) doNow(work *types.Work) (err error) {
+func (im *ImageProcessingWorker) doNow(work *types.Work) (err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = rec.(error)

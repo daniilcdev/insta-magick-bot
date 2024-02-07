@@ -14,12 +14,9 @@ import (
 func main() {
 	log.Println("starting worker...")
 
-	cfg := config.Load()
-	fsOK := directoryReachable(cfg.InDir()) &&
-		directoryReachable(cfg.OutDir()) && directoryReachable(cfg.TempDir())
-
-	if !fsOK {
-		log.Fatalln("invalid file storage setup")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("invalid config: %v\n", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -37,21 +34,6 @@ func main() {
 	waitForInterrupt()
 	cancel()
 	<-ctx.Done()
-}
-
-func directoryReachable(dir string) bool {
-	_, err := os.Stat(dir)
-
-	switch {
-	case os.IsNotExist(err):
-		log.Printf("%s - %v\n", dir, err)
-		return false
-	case err != nil:
-		log.Printf("%s - %v\n", dir, err)
-		return false
-	default:
-		return true
-	}
 }
 
 func waitForInterrupt() {
