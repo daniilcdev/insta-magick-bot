@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	log.Println("starting im-worker...")
+	log.Println("starting worker...")
 
 	cfg := config.Load()
 	fsOK := directoryReachable(cfg.InDir()) &&
@@ -31,11 +31,9 @@ func main() {
 	}
 
 	defer workReceiver.Close()
-
-	// TODO: handle 'stale' completed files
-	go workReceiver.StartReceiving()
-
+	workReceiver.StartReceiving()
 	log.Default().Println("worker started...")
+
 	waitForInterrupt()
 	cancel()
 	<-ctx.Done()

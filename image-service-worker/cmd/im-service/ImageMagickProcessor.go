@@ -31,7 +31,13 @@ func (im *IMProcessor) Do(work types.Work) error {
 	return im.doNow(&work)
 }
 
-func (im *IMProcessor) doNow(work *types.Work) error {
+func (im *IMProcessor) doNow(work *types.Work) (err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = rec.(error)
+		}
+	}()
+
 	if work.Filter == "" {
 		return errors.New("no instruction")
 	}
@@ -41,7 +47,7 @@ func (im *IMProcessor) doNow(work *types.Work) error {
 		return err
 	}
 
-	if _, err := os.Stat(inFile); err != nil {
+	if _, err = os.Stat(inFile); err != nil {
 		return errors.New("image not found")
 	}
 
@@ -52,7 +58,7 @@ func (im *IMProcessor) doNow(work *types.Work) error {
 
 	log.Printf("processing with filter '%s'\n", work.Filter)
 	cmd := exec.Command("convert", args...)
-	_, err := cmd.Output()
+	_, err = cmd.Output()
 
 	return err
 }

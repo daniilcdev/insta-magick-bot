@@ -24,9 +24,9 @@ func (wr *MQWorkReceiver) StartReceiving() {
 	}
 
 	wr.nc = nc
-	_, err = nc.Subscribe(messaging.WorkCreated, wr.onWorkCreated)
-	if err != nil {
-		log.Fatalf("failed to subscribe: topic '%s'\n", err)
+	if _, err = nc.QueueSubscribe(messaging.WorkCreated, "workers", wr.onWorkCreated); err != nil {
+		log.Printf("failed to queue-subscribe: '%v'\n", err)
+		return
 	}
 
 	log.Println("worker subscribed")
