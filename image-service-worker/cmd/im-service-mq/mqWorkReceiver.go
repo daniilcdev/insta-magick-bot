@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 
+	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 
 	"github.com/nats-io/nats.go"
 )
@@ -24,9 +24,9 @@ func (wr *MQWorkReceiver) StartReceiving() {
 	}
 
 	wr.nc = nc
-	_, err = nc.Subscribe(messaging.WorkCreated, wr.onWorkCreated)
-	if err != nil {
-		log.Fatalf("failed to subscribe: topic '%s'\n", err)
+	if _, err = nc.QueueSubscribe(messaging.WorkCreated, "workers", wr.onWorkCreated); err != nil {
+		log.Printf("failed to queue-subscribe: '%v'\n", err)
+		return
 	}
 
 	log.Println("worker subscribed")
@@ -38,28 +38,20 @@ func (wr *MQWorkReceiver) Close() {
 }
 
 func (wr *MQWorkReceiver) onWorkCreated(msg *nats.Msg) {
-	var err error
-	defer func(msg *nats.Msg) {
-		if err != nil {
-			log.Printf("nak(): '%v'\v", err)
-			msg.Nak()
-		} else {
-			msg.Ack()
-		}
-	}(msg)
-
 	var work types.Work
-	if err = json.Unmarshal(msg.Data, &work); err != nil {
+	if err := json.Unmarshal(msg.Data, &work); err != nil {
 		return
 	}
 
-	if err = wr.W.Do(work); err != nil {
+	if err := wr.W.Do(work); err != nil {
 		log.Printf("work failed: '%v'\n", err)
 		wr.failed(work)
+		msg.Nak()
 		return
 	}
 
 	wr.done(work)
+	msg.Ack()
 }
 
 func (wr *MQWorkReceiver) done(work types.Work) {

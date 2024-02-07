@@ -9,29 +9,33 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/daniilcdev/insta-magick-bot/workers/im-worker/config"
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
+	"github.com/daniilcdev/insta-magick-bot/image-service-worker/config"
+	types "github.com/daniilcdev/insta-magick-bot/image-service-worker/pkg"
 )
 
-type IMProcessor struct {
-	outDir     string
-	workingDir string
-	inDir      string
+type imageProcessingWorker struct {
+	inDir  string
+	outDir string
 }
 
-func NewProcessor(cfg config.IMConfig) *IMProcessor {
-	return &IMProcessor{
-		inDir:      cfg.InDir(),
-		outDir:     cfg.OutDir(),
-		workingDir: "./res/tmp/",
+func NewProcessor(cfg *config.WorkerConfig) *imageProcessingWorker {
+	return &imageProcessingWorker{
+		inDir:  cfg.In,
+		outDir: cfg.Out,
 	}
 }
 
-func (im *IMProcessor) Do(work types.Work) error {
+func (im *imageProcessingWorker) Do(work types.Work) error {
 	return im.doNow(&work)
 }
 
-func (im *IMProcessor) doNow(work *types.Work) error {
+func (im *imageProcessingWorker) doNow(work *types.Work) (err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = rec.(error)
+		}
+	}()
+
 	if work.Filter == "" {
 		return errors.New("no instruction")
 	}
@@ -41,7 +45,7 @@ func (im *IMProcessor) doNow(work *types.Work) error {
 		return err
 	}
 
-	if _, err := os.Stat(inFile); err != nil {
+	if _, err = os.Stat(inFile); err != nil {
 		return errors.New("image not found")
 	}
 
@@ -52,7 +56,7 @@ func (im *IMProcessor) doNow(work *types.Work) error {
 
 	log.Printf("processing with filter '%s'\n", work.Filter)
 	cmd := exec.Command("convert", args...)
-	_, err := cmd.Output()
+	_, err = cmd.Output()
 
 	return err
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
-source ../../.env
+source ../.env
 
-go build -o=$DOCKER_LOCAL_MOUNT/im-worker -v ./cmd/im-service/
+go build -o=$DOCKER_LOCAL_MOUNT/image-service-worker -v ./cmd/im-service/
 
 # make resource folders
 mkdir -p $DOCKER_LOCAL_MOUNT/res/tmp \

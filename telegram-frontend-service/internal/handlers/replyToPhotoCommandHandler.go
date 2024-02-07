@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"path"
 
+	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
 	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
 	pkg "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
@@ -103,10 +103,10 @@ func (h *replyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 		})
 	} else {
 		dlLink := bot.FileDownloadLink(file)
-		h.scheduler.Schedule(types.Work{
+		h.scheduler.Schedule(messaging.Work{
 			File:        file.FileID + path.Ext(dlLink),
 			RequesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
-			Filter:      types.Instructions(filter.Receipt),
+			Filter:      messaging.Instructions(filter.Receipt),
 			URL:         dlLink,
 		})
 	}

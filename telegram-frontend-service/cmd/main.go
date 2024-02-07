@@ -12,14 +12,13 @@ import (
 	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
 	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/storage"
 	telegram "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
-	types "github.com/daniilcdev/insta-magick-bot/workers/im-worker/pkg"
 )
 
 func main() {
 	mq := messaging.InitMessageQueue()
 	defer mq.Close()
 
-	workDone := make(chan *types.Work)
+	workDone := make(chan *messaging.Work)
 	mq.Notify(messaging.WorkDone, workDone)
 	defer close(workDone)
 

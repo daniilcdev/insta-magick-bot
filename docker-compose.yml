@@ -26,13 +26,12 @@ services:
     networks:
       - "nats"
 
-  im-worker:
-    build: ./workers/im-worker/
-    container_name: im-worker
+  image-service-worker:
+    build: ./image-service-worker/
     depends_on:
       - nats
     volumes:
-      - ${DOCKER_LOCAL_MOUNT}:/home/im-worker:rw
+      - ${DOCKER_LOCAL_MOUNT}:/home/image-service-worker:rw
     deploy:
       restart_policy:
         condition: unless-stopped
