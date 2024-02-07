@@ -28,7 +28,6 @@ services:
 
   image-service-worker:
     build: ./image-service-worker/
-    # container_name: image-service-worker
     depends_on:
       - nats
     volumes:
