@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -14,7 +13,6 @@ type WorkerConfig struct {
 func Load() (*WorkerConfig, error) {
 	err := godotenv.Load("./config/env/imagemagick.env")
 	if err != nil {
-		log.Printf("env loading failed: '%v'\n", err)
 		return nil, err
 	}
 
