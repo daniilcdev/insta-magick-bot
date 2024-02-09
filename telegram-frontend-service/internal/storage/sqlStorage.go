@@ -25,7 +25,7 @@ var (
 	Completed  requestStatus = "Completed"
 )
 
-func OpenStorageConnection(cfg *config.AppConfig) (*sqlStorage, error) {
+func Connect(cfg *config.AppConfig) (*sqlStorage, error) {
 	db, err := sql.Open(cfg.DbDriver(), cfg.DbConn())
 	if err != nil {
 		return nil, err

@@ -19,10 +19,10 @@ type natsClient struct {
 	subs map[string][]chan *Work
 }
 
-func InitMessageQueue() MessagingClient {
+func Connect() (MessagingClient, error) {
 	ns, err := nats.Connect("nats:4222")
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 
 	mq := &natsClient{
@@ -30,9 +30,9 @@ func InitMessageQueue() MessagingClient {
 		subs: make(map[string][]chan *Work),
 	}
 
-	log.Println("mq initialized")
+	log.Println("mq connected")
 
-	return mq
+	return mq, nil
 }
 
 func (mq *natsClient) Schedule(work Work) error {
