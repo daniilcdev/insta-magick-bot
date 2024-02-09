@@ -1,6 +1,7 @@
 package messaging
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -11,23 +12,23 @@ import (
 type MessagingClient interface {
 	io.Closer
 	Schedule(work Work) error
-	Notify(topic string, ch chan *Work)
+	OnMessage(topic string, handler func(context.Context, *Work)) error
 }
 
 type natsClient struct {
-	ns   *nats.Conn
-	subs map[string][]chan *Work
+	ns  *nats.Conn
+	ctx context.Context
 }
 
-func Connect() (MessagingClient, error) {
+func Connect(ctx context.Context) (MessagingClient, error) {
 	ns, err := nats.Connect("nats:4222")
 	if err != nil {
 		return nil, err
 	}
 
 	mq := &natsClient{
-		ns:   ns,
-		subs: make(map[string][]chan *Work),
+		ns:  ns,
+		ctx: ctx,
 	}
 
 	log.Println("mq connected")
@@ -50,38 +51,22 @@ func (mq *natsClient) Schedule(work Work) error {
 	return nil
 }
 
-func (mq *natsClient) Notify(topic string, receiver chan *Work) {
-	if channels, ok := mq.subs[topic]; ok {
-		mq.subs[topic] = append(channels, receiver)
-	} else {
-		channels = make([]chan *Work, 0, 4)
-		mq.subs[topic] = append(channels, receiver)
-		mq.ns.Subscribe(topic, mq.handleMessage)
-	}
+func (mq *natsClient) OnMessage(topic string, handler func(context.Context, *Work)) error {
+	_, err := mq.ns.Subscribe(topic,
+		func(msg *nats.Msg) {
+			if work, err := getWork(msg); err != nil {
+				log.Printf("unable to unmarshal message: '%v'\n", err)
+			} else {
+				handler(mq.ctx, work)
+			}
+		},
+	)
+
+	return err
 }
 
 func (mq *natsClient) Close() error {
 	return mq.ns.Drain()
-}
-
-func (mq *natsClient) handleMessage(msg *nats.Msg) {
-	defer msg.Ack()
-
-	c, ok := mq.subs[msg.Subject]
-	if !ok {
-		log.Printf("no handlers for topic '%s'", msg.Subject)
-		return
-	}
-
-	work, err := getWork(msg)
-	if err != nil {
-		log.Printf("unable to unmarshal work: '%v'\n", err)
-		return
-	}
-
-	for _, ch := range c {
-		ch <- work
-	}
 }
 
 func getWork(msg *nats.Msg) (*Work, error) {

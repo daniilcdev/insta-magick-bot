@@ -3,7 +3,6 @@ package telegram
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
@@ -13,25 +12,12 @@ import (
 )
 
 type TelegramClient struct {
-	log       logging.Logger
-	bot       *bot.Bot
-	scheduler WorkScheduler
-	cfg       LaunchOptions
+	log logging.Logger
+	bot *bot.Bot
+	cfg LaunchOptions
 }
 
-func NewBotClient(cfg LaunchOptions) *TelegramClient {
-	tgc := TelegramClient{
-		cfg: cfg,
-	}
-
-	return &tgc
-}
-
-func (tc *TelegramClient) WithToken(token string) *TelegramClient {
-	if token == "" {
-		panic(errors.New("missing token"))
-	}
-
+func NewBotClient(cfg LaunchOptions) (*TelegramClient, error) {
 	opts := []bot.Option{
 		bot.WithDefaultHandler(func(ctx context.Context, bot *bot.Bot, update *models.Update) {
 			jsonData, _ := json.Marshal(update)
@@ -39,19 +25,17 @@ func (tc *TelegramClient) WithToken(token string) *TelegramClient {
 		}),
 	}
 
-	b, err := bot.New(token, opts...)
+	botApi, err := bot.New(cfg.BotToken(), opts...)
 	if err != nil {
-		return tc
+		return nil, err
 	}
 
-	tc.bot = b
+	tgc := TelegramClient{
+		cfg: cfg,
+		bot: botApi,
+	}
 
-	return tc
-}
-
-func (tc *TelegramClient) WithWorkScheduler(scheduler WorkScheduler) *TelegramClient {
-	tc.scheduler = scheduler
-	return tc
+	return &tgc, nil
 }
 
 func (tc *TelegramClient) WithLogger(logger logging.Logger) *TelegramClient {
@@ -64,19 +48,20 @@ func (tc *TelegramClient) WithCommandHandler(handler CommandHandler) *TelegramCl
 	return tc
 }
 
-func (tc *TelegramClient) Start(ctx context.Context) {
+func (tc *TelegramClient) Start(ctx context.Context) error {
 	if tc.bot == nil {
-		panic("can't start client - bot wasn't set")
+		return fmt.Errorf("can't start client - bot wasn't set")
 	}
 
 	tc.bot.RegisterHandler(bot.HandlerTypeMessageText, "/start", bot.MatchTypeExact, tc.startHandler)
 
 	tc.log.Info("Bot started")
-	tc.bot.Start(ctx)
+	go tc.bot.Start(ctx)
+	return nil
 }
 
 func (tc *TelegramClient) startHandler(ctx context.Context, bot *bot.Bot, update *models.Update) {
-	params := chatResponseParams(update)
+	params := ChatResponseParams(update)
 	params.Text = `Добро пожаловать в Imbot!
 
 Для начала, отправьте в этот чат Ваше фото и через несколько секунд я отвечу Вам обработанной версией.
@@ -87,18 +72,20 @@ func (tc *TelegramClient) startHandler(ctx context.Context, bot *bot.Bot, update
 	bot.SendMessage(ctx, params)
 }
 
-func (tc *TelegramClient) sendPhoto(ctx context.Context, chatId string, inputFile models.InputFile) {
+func (tc *TelegramClient) sendPhoto(ctx context.Context, chatId string, inputFile models.InputFile) error {
 	params := &bot.SendPhotoParams{
 		ChatID: chatId,
 		Photo:  inputFile,
 	}
 
 	if _, err := tc.bot.SendPhoto(ctx, params); err != nil {
-		tc.log.ErrStr(fmt.Sprintf("failed to send image back '%v'", err))
+		return err
 	}
+
+	return nil
 }
 
-func chatResponseParams(update *models.Update) *bot.SendMessageParams {
+func ChatResponseParams(update *models.Update) *bot.SendMessageParams {
 	return &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 	}

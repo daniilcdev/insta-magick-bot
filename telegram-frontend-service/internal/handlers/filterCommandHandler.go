@@ -49,9 +49,7 @@ func matchListFiltersCommand(update *models.Update) bool {
 
 func (h *listFiltersHandler) handleListFiltersCommand(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	availableFilters := h.storage.FilterNames()
-	msgParams := &tg.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-	}
+	msgParams := telegram.ChatResponseParams(update)
 
 	if len(availableFilters) == 0 {
 		msgParams.Text = "Отсутствуют доступные фильтры"
@@ -59,9 +57,7 @@ func (h *listFiltersHandler) handleListFiltersCommand(ctx context.Context, bot *
 		msgParams.Text = strings.Join(availableFilters, "\n")
 	}
 
-	_, err := bot.SendMessage(ctx, msgParams)
-
-	if err != nil {
+	if _, err := bot.SendMessage(ctx, msgParams); err != nil {
 		h.log.Err(err)
 	}
 }
