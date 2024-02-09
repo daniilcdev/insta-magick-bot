@@ -59,16 +59,17 @@ func (tc *TelegramClient) WithLogger(logger logging.Logger) *TelegramClient {
 	return tc
 }
 
-func (tc *TelegramClient) Start(ctx context.Context, handlers ...CommandHandler) {
+func (tc *TelegramClient) WithCommandHandler(handler CommandHandler) *TelegramClient {
+	tc.bot.RegisterHandlerMatchFunc(handler.WillHandle, handler.Handle)
+	return tc
+}
+
+func (tc *TelegramClient) Start(ctx context.Context) {
 	if tc.bot == nil {
 		panic("can't start client - bot wasn't set")
 	}
 
 	tc.bot.RegisterHandler(bot.HandlerTypeMessageText, "/start", bot.MatchTypeExact, tc.startHandler)
-
-	for _, h := range handlers {
-		tc.bot.RegisterHandlerMatchFunc(h.WillHandle, h.Handle)
-	}
 
 	tc.log.Info("Bot started")
 	tc.bot.Start(ctx)

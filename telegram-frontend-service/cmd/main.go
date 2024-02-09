@@ -38,36 +38,22 @@ func main() {
 		WithLogger(logger).
 		WithWorkScheduler(mq)
 
-	go botClient.ListenResult(ctx, workDone)
-
-	h := getHandlers(logger, db, mq)
-	go botClient.Start(
-		ctx,
-		h...,
-	)
-
-	waitForExit()
-}
-
-func getHandlers(
-	logger logging.Logger,
-	db telegram.Storage,
-	mq telegram.WorkScheduler,
-) []telegram.CommandHandler {
-	h := []telegram.CommandHandler{
-		handlers.NewPhotoMessageHandler(),
-		handlers.NewReplyToPhoto().
+	botClient.
+		WithCommandHandler(handlers.NewPhotoMessageHandler()).
+		WithCommandHandler(handlers.NewReplyToPhoto().
 			WithLogger(logger).
 			WithStorage(db).
 			WithScheduler(mq),
-
-		handlers.
+		).
+		WithCommandHandler(handlers.
 			NewListFiltersHandler().
 			WithStorage(db).
-			WithLogger(logger),
-	}
+			WithLogger(logger))
 
-	return h
+	go botClient.ListenResult(ctx, workDone)
+	go botClient.Start(ctx)
+
+	waitForExit()
 }
 
 func waitForExit() {
