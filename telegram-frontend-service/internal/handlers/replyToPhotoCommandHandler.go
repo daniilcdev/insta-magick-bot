@@ -7,6 +7,7 @@ import (
 
 	messaging "github.com/daniilcdev/insta-magick-bot/messaging/pkg"
 	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
+	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/storage"
 	pkg "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 
 	tg "github.com/go-telegram/bot"
@@ -15,7 +16,7 @@ import (
 
 type replyToPhotoHandler struct {
 	scheduler pkg.WorkScheduler
-	storage   pkg.Storage
+	storage   storage.Storage
 	log       logging.Logger
 }
 
@@ -33,7 +34,7 @@ func (h *replyToPhotoHandler) WithScheduler(scheduler pkg.WorkScheduler) *replyT
 	return h
 }
 
-func (h *replyToPhotoHandler) WithStorage(storage pkg.Storage) *replyToPhotoHandler {
+func (h *replyToPhotoHandler) WithStorage(storage storage.Storage) *replyToPhotoHandler {
 	h.storage = storage
 	return h
 }
@@ -103,11 +104,25 @@ func (h *replyToPhotoHandler) Handle(ctx context.Context, bot *tg.Bot, update *m
 		})
 	} else {
 		dlLink := bot.FileDownloadLink(file)
-		h.scheduler.Schedule(messaging.Work{
-			File:        file.FileID + path.Ext(dlLink),
-			RequesterId: fmt.Sprintf("%d", update.Message.Chat.ID),
-			Filter:      messaging.Instructions(filter.Receipt),
+		fileName := file.FileID + path.Ext(dlLink)
+
+		requestId, err := h.storage.CreateRequest(fileName,
+			fmt.Sprintf("%d", update.Message.Chat.ID),
+			filter.Name)
+
+		if err != nil {
+			h.log.Err(err)
+			return
+		}
+
+		work := messaging.Work{
+			RequestId:   requestId,
+			File:        fileName,
+			Filter:      filter.Name,
+			Instruction: messaging.Instructions(filter.Receipt),
 			URL:         dlLink,
-		})
+		}
+
+		h.scheduler.Schedule(work)
 	}
 }

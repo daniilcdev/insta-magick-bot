@@ -7,12 +7,12 @@ package queries
 
 import (
 	"context"
-	"strings"
 )
 
-const createRequest = `-- name: CreateRequest :exec
+const createRequest = `-- name: CreateRequest :one
 INSERT INTO requests (file, requester_id, filter_name)
 VALUES ($1, $2, $3)
+RETURNING id
 `
 
 type CreateRequestParams struct {
@@ -21,18 +21,20 @@ type CreateRequestParams struct {
 	FilterName  string
 }
 
-func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) error {
-	_, err := q.db.ExecContext(ctx, createRequest, arg.File, arg.RequesterID, arg.FilterName)
-	return err
+func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createRequest, arg.File, arg.RequesterID, arg.FilterName)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
-const deleteRequestsInStatus = `-- name: DeleteRequestsInStatus :exec
+const deleteRequest = `-- name: DeleteRequest :exec
 DELETE FROM requests
-WHERE status = $1
+WHERE id = $1
 `
 
-func (q *Queries) DeleteRequestsInStatus(ctx context.Context, status string) error {
-	_, err := q.db.ExecContext(ctx, deleteRequestsInStatus, status)
+func (q *Queries) DeleteRequest(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteRequest, id)
 	return err
 }
 
@@ -69,69 +71,27 @@ func (q *Queries) GetRequestsInStatus(ctx context.Context, status string) ([]Get
 	return items, nil
 }
 
-const schedulePending = `-- name: SchedulePending :many
+const updateRequestStatus = `-- name: UpdateRequestStatus :one
 UPDATE requests
-SET status = 'Processing'
-WHERE id in (
-        SELECT id
-        FROM requests
-        WHERE status = 'Pending'
-        LIMIT $1)
-RETURNING file, filter_name
+SET status = $2
+WHERE id = $1
+RETURNING id, file, requester_id, status, filter_name
 `
 
-type SchedulePendingRow struct {
-	File       string
-	FilterName string
+type UpdateRequestStatusParams struct {
+	ID     int64
+	Status string
 }
 
-// weird behaviour: naming parameter doesn't work wit sqlite for some reason
-func (q *Queries) SchedulePending(ctx context.Context, limit int64) ([]SchedulePendingRow, error) {
-	rows, err := q.db.QueryContext(ctx, schedulePending, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []SchedulePendingRow
-	for rows.Next() {
-		var i SchedulePendingRow
-		if err := rows.Scan(&i.File, &i.FilterName); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const updateRequestsStatus = `-- name: UpdateRequestsStatus :exec
-UPDATE requests
-SET status = $1
-WHERE file in ($2)
-`
-
-type UpdateRequestsStatusParams struct {
-	Status    string
-	Filenames []string
-}
-
-func (q *Queries) UpdateRequestsStatus(ctx context.Context, arg UpdateRequestsStatusParams) error {
-	query := updateRequestsStatus
-	var queryParams []interface{}
-	queryParams = append(queryParams, arg.Status)
-	if len(arg.Filenames) > 0 {
-		for _, v := range arg.Filenames {
-			queryParams = append(queryParams, v)
-		}
-		query = strings.Replace(query, "/*SLICE:filenames*/?", strings.Repeat(",?", len(arg.Filenames))[1:], 1)
-	} else {
-		query = strings.Replace(query, "/*SLICE:filenames*/?", "NULL", 1)
-	}
-	_, err := q.db.ExecContext(ctx, query, queryParams...)
-	return err
+func (q *Queries) UpdateRequestStatus(ctx context.Context, arg UpdateRequestStatusParams) (Request, error) {
+	row := q.db.QueryRowContext(ctx, updateRequestStatus, arg.ID, arg.Status)
+	var i Request
+	err := row.Scan(
+		&i.ID,
+		&i.File,
+		&i.RequesterID,
+		&i.Status,
+		&i.FilterName,
+	)
+	return i, err
 }

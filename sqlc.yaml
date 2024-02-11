@@ -10,3 +10,5 @@ sql:
         overrides:
           - db_type: "integer"
             go_type: "int64"
+          - db_type: "serial"
+            go_type: "int64"

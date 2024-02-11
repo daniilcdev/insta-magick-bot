@@ -5,13 +5,14 @@ import (
 	"strings"
 
 	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
+	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/storage"
 	telegram "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/pkg"
 	tg "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
 type listFiltersHandler struct {
-	storage telegram.Storage
+	storage storage.FiltersProvider
 	log     logging.Logger
 }
 
@@ -19,7 +20,7 @@ func NewListFiltersHandler() *listFiltersHandler {
 	return &listFiltersHandler{}
 }
 
-func (h *listFiltersHandler) WithStorage(storage telegram.Storage) *listFiltersHandler {
+func (h *listFiltersHandler) WithStorage(storage storage.FiltersProvider) *listFiltersHandler {
 	h.storage = storage
 	return h
 }
@@ -49,9 +50,7 @@ func matchListFiltersCommand(update *models.Update) bool {
 
 func (h *listFiltersHandler) handleListFiltersCommand(ctx context.Context, bot *tg.Bot, update *models.Update) {
 	availableFilters := h.storage.FilterNames()
-	msgParams := &tg.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-	}
+	msgParams := telegram.ChatResponseParams(update)
 
 	if len(availableFilters) == 0 {
 		msgParams.Text = "Отсутствуют доступные фильтры"
@@ -59,9 +58,7 @@ func (h *listFiltersHandler) handleListFiltersCommand(ctx context.Context, bot *
 		msgParams.Text = strings.Join(availableFilters, "\n")
 	}
 
-	_, err := bot.SendMessage(ctx, msgParams)
-
-	if err != nil {
+	if _, err := bot.SendMessage(ctx, msgParams); err != nil {
 		h.log.Err(err)
 	}
 }
