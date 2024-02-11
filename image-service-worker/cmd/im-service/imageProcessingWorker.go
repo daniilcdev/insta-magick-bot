@@ -36,7 +36,7 @@ func (im *imageProcessingWorker) doNow(work *types.Work) (err error) {
 		}
 	}()
 
-	if work.Filter == "" {
+	if work.Instruction == "" {
 		return errors.New("no instruction")
 	}
 
@@ -51,7 +51,7 @@ func (im *imageProcessingWorker) doNow(work *types.Work) (err error) {
 
 	outFile := im.outDir + work.File
 
-	args := strings.Split(inFile+" "+string(work.Filter), " ")
+	args := strings.Split(inFile+" "+string(work.Instruction), " ")
 	args = append(args, outFile)
 
 	log.Printf("processing with filter '%s'\n", work.Filter)
