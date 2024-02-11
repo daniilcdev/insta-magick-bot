@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/config"
 	logging "github.com/daniilcdev/insta-magick-bot/telegram-frontend-service/internal/logger"
 
 	"github.com/go-telegram/bot"
@@ -14,10 +15,10 @@ import (
 type TelegramClient struct {
 	log logging.Logger
 	bot *bot.Bot
-	cfg LaunchOptions
+	cfg *config.AppConfig
 }
 
-func NewBotClient(cfg LaunchOptions) (*TelegramClient, error) {
+func NewBotClient(cfg *config.AppConfig) (*TelegramClient, error) {
 	opts := []bot.Option{
 		bot.WithDefaultHandler(func(ctx context.Context, bot *bot.Bot, update *models.Update) {
 			jsonData, _ := json.Marshal(update)
@@ -25,7 +26,7 @@ func NewBotClient(cfg LaunchOptions) (*TelegramClient, error) {
 		}),
 	}
 
-	botApi, err := bot.New(cfg.BotToken(), opts...)
+	botApi, err := bot.New(cfg.BotToken, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -7,10 +7,10 @@ import (
 )
 
 type AppConfig struct {
-	botToken          string
-	processedFilesDir string
-	dbDriver          string
-	dbConn            string
+	BotToken          string
+	ProcessedFilesDir string
+	DbDriver          string
+	DbConn            string
 }
 
 func LoadConfig() *AppConfig {
@@ -19,26 +19,9 @@ func LoadConfig() *AppConfig {
 		"./env/private/db.env",
 	)
 	return &AppConfig{
-		botToken:          os.Getenv("TELEGRAM_BOT_TOKEN"),
-		processedFilesDir: os.Getenv("PROCESSED_FILES_DIR"),
-
-		dbDriver: os.Getenv("DB_DRIVER"),
-		dbConn:   os.Getenv("DB_CONN"),
+		BotToken:          os.Getenv("TELEGRAM_BOT_TOKEN"),
+		ProcessedFilesDir: os.Getenv("PROCESSED_FILES_DIR"),
+		DbDriver:          os.Getenv("DB_DRIVER"),
+		DbConn:            os.Getenv("DB_CONN"),
 	}
-}
-
-func (cfg *AppConfig) BotToken() string {
-	return cfg.botToken
-}
-
-func (cfg *AppConfig) DbDriver() string {
-	return cfg.dbDriver
-}
-
-func (cfg *AppConfig) DbConn() string {
-	return cfg.dbConn
-}
-
-func (cfg *AppConfig) ResultsDir() string {
-	return cfg.processedFilesDir
 }

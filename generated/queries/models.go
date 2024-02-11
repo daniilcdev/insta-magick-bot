@@ -7,13 +7,13 @@ package queries
 import ()
 
 type Filter struct {
-	ID      int32
+	ID      int64
 	Name    string
 	Receipt string
 }
 
 type Request struct {
-	ID          int32
+	ID          int64
 	File        string
 	RequesterID string
 	Status      string

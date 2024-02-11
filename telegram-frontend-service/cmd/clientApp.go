@@ -65,7 +65,11 @@ func (app *clientApp) start() error {
 		return err
 	}
 
-	mq.OnMessage(messaging.WorkDone, botClient.HandleCompletedWork)
+	receiver := telegram.NewResultReceiver(botClient).
+		WithLogger(logging.NewLogger().WithTag("WorkDone Listener")).
+		WithStorage(db)
+
+	mq.OnMessage(messaging.WorkDone, receiver.HandleCompletedWork)
 
 	waitForExit()
 	return nil
